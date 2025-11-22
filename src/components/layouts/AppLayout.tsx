@@ -5,6 +5,7 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar'
 import { Header, Sidebar } from './'
+import { AccessibilityComponet } from '@/components/custom'
 
 export const AppLayout = ({ children }: PropsWithChildren) => (
   <SidebarProvider>
@@ -14,6 +15,7 @@ export const AppLayout = ({ children }: PropsWithChildren) => (
       <main className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-primary scrollbar-track-background">
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>
+      <AccessibilityComponet />
     </SidebarInset>
   </SidebarProvider>
 )
