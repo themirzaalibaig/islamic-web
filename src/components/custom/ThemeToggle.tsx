@@ -1,6 +1,3 @@
-import { useCallback, useEffect, useMemo } from 'react'
-import { useAppDispatch, useAppSelector } from '@/redux'
-import { setMode, toggle } from '@/redux'
 import {
   Button,
   DropdownMenu,
@@ -10,47 +7,58 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui'
+import { useColorMode, useMediaQuery } from '@reactuses/core'
+import { Sun, Moon, Laptop, Check, SunMoon } from 'lucide-react'
 
 export const ThemeToggle = () => {
-  const mode = useAppSelector((s) => s.theme.mode)
-  const dispatch = useAppDispatch()
+  const systemIsDark = useMediaQuery('(prefers-color-scheme: dark)', false)
+  const [mode, setMode] = useColorMode({
+    attribute: 'class',
+    modes: ['light', 'dark', 'system'],
+    storageKey: 'theme-mode',
+    defaultValue: systemIsDark ? 'dark' : 'light',
+    modeClassNames: {
+      light: 'light',
+      dark: 'dark',
+      system: systemIsDark ? 'dark' : 'light',
+    }
+  })
 
-  useEffect(() => {
-    const root = document.documentElement
-    if (mode === 'dark') root.classList.add('dark')
-    else root.classList.remove('dark')
-  }, [mode])
-
-  const options = useMemo(() => ['light', 'dark'] as Array<'light' | 'dark'>, [])
-  const onSelect = useCallback(
-    (m: 'light' | 'dark') => {
-      dispatch(setMode(m))
-    },
-    [dispatch],
-  )
-  const onToggle = useCallback(() => dispatch(toggle()), [dispatch])
+  const options = ['light', 'dark', 'system'] as const
 
   return (
-    <div className="flex items-center gap-2">
-      <Button onClick={onToggle} variant="outline" size="sm">
-        {mode}
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            Theme
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuLabel>Select theme</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {options.map((m) => (
-            <DropdownMenuItem key={m} onClick={() => onSelect(m)}>
-              {m}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size={"icon"}>
+         <SunMoon />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align='end'>
+        <DropdownMenuLabel>Theme</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+
+        {options.map((m) => {
+          const active = m === mode
+          return (
+            <DropdownMenuItem
+              key={m}
+              onClick={() => setMode(m)}
+              className="flex items-center gap-2"
+            >
+              {m === 'system' ? (
+                <Laptop className="size-4" />
+              ) : m === 'dark' ? (
+                <Moon className="size-4" />
+              ) : (
+                <Sun className="size-4" />
+              )}
+              <span className="capitalize flex-1">{m}</span>
+              {active && <Check className="size-4 text-primary" />}
             </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
