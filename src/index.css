@@ -211,3 +211,6 @@
     @apply bg-background text-foreground;
   }
 }
+.app-scrollbar{
+  @apply overflow-y-auto scrollbar-thin scrollbar-thumb-primary scrollbar-track-background;
+}

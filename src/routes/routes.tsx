@@ -3,6 +3,7 @@ import { About, Home } from '@/pages'
 import { AppLayout } from '@/components/layouts'
 import { Protected } from '@/features/auth'
 import { TestsPage } from '@/features/tests'
+import { Quran } from '@/features/quran'
 
 export const routes: RouteObject[] = [
   {
@@ -10,6 +11,14 @@ export const routes: RouteObject[] = [
     element: (
       <AppLayout>
         <Home />
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/quran',
+    element: (
+      <AppLayout>
+        <Quran />
       </AppLayout>
     ),
   },

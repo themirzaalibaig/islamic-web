@@ -12,7 +12,7 @@ export const AppLayout = ({ children }: PropsWithChildren) => (
     <Sidebar />
     <SidebarInset className='h-screen'>
       <Header />
-      <main className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-primary scrollbar-track-background">
+      <main className="flex-1 p-4 app-scrollbar">
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>
       <AccessibilityComponet />
