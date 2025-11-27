@@ -1,5 +1,4 @@
 import type { PropsWithChildren } from 'react'
-import { useEffect, useState } from 'react'
 import { ErrorBoundary } from '@/components/system'
 import {
   SidebarProvider,

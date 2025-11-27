@@ -1,5 +1,4 @@
-import { useLocation } from 'react-router-dom'
-import { Button, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, Separator, Slider } from '@/components/ui'
+import { Button, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, Slider } from '@/components/ui'
 import { PlayCircle, PauseCircle, ChevronDown, Download, RefreshCw, X, BookOpen, Volume2 } from 'lucide-react'
 import { useQuranData } from './'
 import { useQuranAudio } from './'
@@ -16,7 +15,7 @@ export const Quran = () => {
     // const location = useLocation()
     const defaultChapterId = 1
     const { surahs, selectedSurah, verses, loading, searchQuery, setSearchQuery, fetchVerses, filteredSurahs } = useQuranData(defaultChapterId)
-    const { audioUrl, reciterId, isVersePlaying, isSurahPlaying, playbackSpeed, currentAudio, surahAudioRef, verseAudioRef, loadSurahAudio, toggleSurahPlayback, playVerseAudio, handleReciterChange, setPlayback, syncProgress, refreshCurrentAudio } = useQuranAudio()
+    const { audioUrl, reciterId, isSurahPlaying, playbackSpeed, currentAudio, surahAudioRef, verseAudioRef, loadSurahAudio, toggleSurahPlayback, playVerseAudio, handleReciterChange, setPlayback, syncProgress, refreshCurrentAudio } = useQuranAudio()
 
     useEffect(() => {
         loadSurahAudio(defaultChapterId,surahs)
@@ -81,7 +80,7 @@ export const Quran = () => {
                     {selectedSurah ? (
                         <div className="max-w-4xl mx-auto">
                             {loading ? <SurahHeaderSkeleton /> : <SurahHeader selectedSurah={selectedSurah as any} audioUrl={audioUrl} isSurahPlaying={isSurahPlaying} reciters={recitersList} reciterId={reciterId} toggleSurahPlayback={() => toggleSurahPlayback(selectedSurah?.name_simple)} />}
-                            {loading ? <VerseListSkeleton /> : <VerseList verses={verses as any} surahs={surahs} currentAudio={{ type: currentAudio.type, isPlaying: currentAudio.isPlaying, verseKey: currentAudio.verseKey }} playVerseAudio={(key) => playVerseAudio(key, surahs)} stripHtmlTags={(t) => (t ? t.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : 'Translation not available')} />}
+                            {loading ? <VerseListSkeleton /> : <VerseList verses={verses as any} currentAudio={{ type: currentAudio.type, isPlaying: currentAudio.isPlaying, verseKey: currentAudio.verseKey }} playVerseAudio={(key) => playVerseAudio(key, surahs)} stripHtmlTags={(t) => (t ? t.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : 'Translation not available')} />}
                         </div>
                     ) : (
                         <div className="h-full flex items-center justify-center text-muted-foreground">Select a Surah</div>

@@ -4,13 +4,12 @@ import type { Verse } from '../'
 
 type Props = {
   verses: Verse[]
-  surahs: Array<{ id: number; name_simple: string }>
   currentAudio: { type: 'surah' | 'verse' | null; isPlaying: boolean; verseKey: string }
   playVerseAudio: (key: string) => void
   stripHtmlTags: (t?: string) => string
 }
 
-export const VerseList = ({ verses, surahs, currentAudio, playVerseAudio, stripHtmlTags }: Props) => {
+export const VerseList = ({ verses, currentAudio, playVerseAudio, stripHtmlTags }: Props) => {
   return (
     <div className="space-y-4 md:space-y-6">
       {verses.map((v) => (

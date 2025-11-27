@@ -1,5 +1,5 @@
 import { Button, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, Slider } from '@/components/ui'
-import { PlayCircle, PauseCircle, ChevronDown, Download, RefreshCw, X } from 'lucide-react'
+import { PlayCircle, PauseCircle, Download, RefreshCw, X } from 'lucide-react'
 
 type Props = {
   audioUrl: string | null

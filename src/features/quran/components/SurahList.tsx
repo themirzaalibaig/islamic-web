@@ -1,5 +1,5 @@
-import { Input, Button, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, Separator } from '@/components/ui'
-import { ChevronDown, Search } from 'lucide-react'
+import { Input, Separator } from '@/components/ui'
+import { Search } from 'lucide-react'
 import type { Surah } from '../'
 
 type Props = {

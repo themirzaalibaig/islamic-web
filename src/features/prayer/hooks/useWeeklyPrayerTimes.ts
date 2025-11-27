@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { Coordinates } from './useGeolocation'
-import { CalculationMethod, Coordinates as AdhanCoordinates, Madhab, PrayerTimes } from 'adhan'
+import { CalculationMethod, Coordinates as AdhanCoordinates, PrayerTimes } from 'adhan'
 
 export type WeeklyDayTimes = {
   date: Date
@@ -16,13 +16,13 @@ const toAdhanCoords = (coords: Coordinates) => new AdhanCoordinates(coords.latit
 
 export const useWeeklyPrayerTimes = (
   coords: Coordinates | null,
-  madhab: Madhab | null,
+  madhab: any | null,
   days: number = 7,
 ) => {
   const list = useMemo<WeeklyDayTimes[] | null>(() => {
     if (!coords || !madhab) return null
     const params = CalculationMethod.MoonsightingCommittee()
-    params.madhab = madhab
+    if (madhab) (params as any).madhab = madhab
     const base = new Date()
     const start = new Date(base.getFullYear(), base.getMonth(), base.getDate())
     const out: WeeklyDayTimes[] = []
@@ -45,4 +45,3 @@ export const useWeeklyPrayerTimes = (
 
   return list
 }
-

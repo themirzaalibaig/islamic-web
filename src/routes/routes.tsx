@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layouts'
 import { Protected } from '@/features/auth'
 import { TestsPage } from '@/features/tests'
 import { Quran } from '@/features/quran'
+import { Tasbeeh } from '@/features/tasbeeh'
 import { PrayerTimes } from '@/features/prayer'
 import { Login, Signup, ForgotPassword, ResendVerification, Profile } from '@/features/auth/pages'
 
@@ -24,6 +25,16 @@ export const routes: RouteObject[] = [
       <AppLayout>
         <Protected>
           <Quran />
+        </Protected>
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/tasbeeh',
+    element: (
+      <AppLayout>
+        <Protected>
+          <Tasbeeh />
         </Protected>
       </AppLayout>
     ),

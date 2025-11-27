@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import type { Coordinates } from './useGeolocation'
-import { CalculationMethod, Coordinates as AdhanCoordinates, Madhab, Prayer, PrayerTimes } from 'adhan'
+import { CalculationMethod, Coordinates as AdhanCoordinates, Prayer, PrayerTimes } from 'adhan'
 
 const toAdhanCoords = (coords: Coordinates) => new AdhanCoordinates(coords.latitude, coords.longitude)
 
 export type PrayerClock = {
   now: Date
-  currentPrayer: Prayer | null
-  nextPrayer: Prayer | null
+  currentPrayer: any | null
+  nextPrayer: any | null
   nextPrayerTime: Date | null
   currentStart: Date | null
   currentEnd: Date | null
@@ -15,7 +15,7 @@ export type PrayerClock = {
   timeLeftMs: number
 }
 
-export const usePrayerClock = (coords: Coordinates | null, madhab: Madhab | null) => {
+export const usePrayerClock = (coords: Coordinates | null, madhab: any | null) => {
   const [now, setNow] = useState<Date>(() => new Date())
 
   useEffect(() => {
@@ -66,7 +66,7 @@ export const usePrayerClock = (coords: Coordinates | null, madhab: Madhab | null
         return nextPt.fajr
       }
       if (current === Prayer.Fajr) return pt.sunrise
-      const order: Prayer[] = [Prayer.Fajr, Prayer.Sunrise, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha]
+      const order = [Prayer.Fajr, Prayer.Sunrise, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha] as any[]
       const idx = order.indexOf(current)
       const np = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : null
       return np ? pt.timeForPrayer(np) : null

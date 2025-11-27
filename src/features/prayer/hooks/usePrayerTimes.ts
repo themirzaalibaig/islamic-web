@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { Coordinates } from './useGeolocation'
-import { CalculationMethod, Coordinates as AdhanCoordinates, Madhab, Prayer, PrayerTimes } from 'adhan'
+import { CalculationMethod, Coordinates as AdhanCoordinates, Prayer, PrayerTimes } from 'adhan'
 
 export type DailyPrayerTimes = {
   fajr: Date
@@ -12,14 +12,14 @@ export type DailyPrayerTimes = {
 }
 
 export type CalculatedPrayerMeta = {
-  currentPrayer: Prayer | null
-  nextPrayer: Prayer | null
-  previousPrayer: Prayer | null
+  currentPrayer: any | null
+  nextPrayer: any | null
+  previousPrayer: any | null
 }
 
 const toAdhanCoords = (coords: Coordinates) => new AdhanCoordinates(coords.latitude, coords.longitude)
 
-export const usePrayerTimes = (coords: Coordinates | null, madhab: Madhab | null) => {
+export const usePrayerTimes = (coords: Coordinates | null, madhab: any | null) => {
   const result = useMemo(() => {
     if (!coords || !madhab) return null as
       | null
@@ -29,7 +29,7 @@ export const usePrayerTimes = (coords: Coordinates | null, madhab: Madhab | null
         }
     const date = new Date()
     const parameters = CalculationMethod.MoonsightingCommittee()
-    parameters.madhab = madhab
+    if (madhab) (parameters as any).madhab = madhab
 
     const pt = new PrayerTimes(toAdhanCoords(coords), date, parameters)
     const times: DailyPrayerTimes = {
@@ -43,7 +43,7 @@ export const usePrayerTimes = (coords: Coordinates | null, madhab: Madhab | null
     const current = pt.currentPrayer()
     const next = pt.nextPrayer()
     const previous = (() => {
-      const order: Prayer[] = [Prayer.Fajr, Prayer.Sunrise, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha]
+      const order = [Prayer.Fajr, Prayer.Sunrise, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha] as any[]
       const idx = current ? order.indexOf(current) : -1
       return idx > 0 ? order[idx - 1] : null
     })()
@@ -59,7 +59,7 @@ export const usePrayerTimes = (coords: Coordinates | null, madhab: Madhab | null
   return result
 }
 
-export const formatPrayerName = (p: Prayer | null) => {
+export const formatPrayerName = (p: any | null) => {
   switch (p) {
     case Prayer.Fajr:
       return 'Fajr'
