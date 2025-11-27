@@ -2,6 +2,7 @@ import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 import type { PropsWithChildren } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/config'
+import { useLocalStorage } from '@reactuses/core'
 
 type AuthContextValue = {
   session: Session | null
@@ -18,8 +19,8 @@ type AuthContextValue = {
   resendVerification: (email: string) => Promise<{ error?: string }>
 }
 export const AuthProvider = ({ children }: PropsWithChildren) => {
-  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [session, setSession] = useLocalStorage<Session | null>('session', null)
 
   useEffect(() => {
     const init = async () => {
