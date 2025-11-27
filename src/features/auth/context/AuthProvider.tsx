@@ -20,7 +20,12 @@ type AuthContextValue = {
 }
 export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [loading, setLoading] = useState(true)
-  const [session, setSession] = useLocalStorage<Session | null>('session', null)
+  const [session, setSession] = useLocalStorage<Session | null>('session', null, {
+    serializer: {
+      read: (value: string) => JSON.parse(value),
+      write: (value: Session | null) => JSON.stringify(value),
+    },
+  })
 
   useEffect(() => {
     const init = async () => {
