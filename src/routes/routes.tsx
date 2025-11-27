@@ -6,6 +6,7 @@ import { TestsPage } from '@/features/tests'
 import { Quran } from '@/features/quran'
 import { Tasbeeh } from '@/features/tasbeeh'
 import { PrayerTimes } from '@/features/prayer'
+import { Qibla } from '@/features/qibla'
 import { Login, Signup, ForgotPassword, ResendVerification, Profile } from '@/features/auth/pages'
 
 export const routes: RouteObject[] = [
@@ -45,6 +46,16 @@ export const routes: RouteObject[] = [
       <AppLayout>
         <Protected>
           <PrayerTimes />
+        </Protected>
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/qibla',
+    element: (
+      <AppLayout>
+        <Protected>
+          <Qibla />
         </Protected>
       </AppLayout>
     ),
