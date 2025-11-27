@@ -7,8 +7,18 @@ const PRESETS: TasbeehPreset[] = [
   { id: 'subhanallah', name: 'SubhanAllah', text: 'سُبْحَانَ اللّٰهِ', defaultTarget: 33 },
   { id: 'alhamdulillah', name: 'Alhamdulillah', text: 'اَلْحَمْدُ لِلّٰهِ', defaultTarget: 33 },
   { id: 'allahu-akbar', name: 'Allahu Akbar', text: 'اَللّٰهُ أَكْبَرُ', defaultTarget: 34 },
-  { id: 'la-ilaha', name: 'La ilaha illallah', text: 'لَا إِلٰهَ إِلَّا اللّٰهُ', defaultTarget: 100 },
-  { id: 'astaghfirullah', name: 'Astaghfirullah', text: 'أَسْتَغْفِرُ اللّٰهَ', defaultTarget: 100 },
+  {
+    id: 'la-ilaha',
+    name: 'La ilaha illallah',
+    text: 'لَا إِلٰهَ إِلَّا اللّٰهُ',
+    defaultTarget: 100,
+  },
+  {
+    id: 'astaghfirullah',
+    name: 'Astaghfirullah',
+    text: 'أَسْتَغْفِرُ اللّٰهَ',
+    defaultTarget: 100,
+  },
   { id: 'salawat', name: 'Salawat', text: 'اَللّٰهُمَّ صَلِّ عَلٰى مُحَمَّدٍ', defaultTarget: 100 },
 ]
 
@@ -18,10 +28,16 @@ type UseTasbeehOptions = {
 
 export const useTasbeehCounter = (options?: UseTasbeehOptions) => {
   const { items: customPresets } = useTasbeehPresets()
-  const [presetId, setPresetId] = useLocalStorage<string>('tasbeeh:preset', options?.initialPresetId || PRESETS[0].id)
+  const [presetId, setPresetId] = useLocalStorage<string>(
+    'tasbeeh:preset',
+    options?.initialPresetId || PRESETS[0].id,
+  )
   const [soundEnabled, setSoundEnabled] = useLocalStorage<boolean>('tasbeeh:sound', true)
   const [vibrateEnabled, setVibrateEnabled] = useLocalStorage<boolean>('tasbeeh:vibrate', false)
-  const [target, setTarget] = useLocalStorage<number>(`tasbeeh:target:${presetId}`, PRESETS[0].defaultTarget)
+  const [target, setTarget] = useLocalStorage<number>(
+    `tasbeeh:target:${presetId}`,
+    PRESETS[0].defaultTarget,
+  )
   const [count, setCount] = useLocalStorage<number>(`tasbeeh:count:${presetId}`, 0)
   const [rounds, setRounds] = useLocalStorage<number>(`tasbeeh:rounds:${presetId}`, 0)
 
@@ -31,7 +47,10 @@ export const useTasbeehCounter = (options?: UseTasbeehOptions) => {
     const customs = Array.isArray(customPresets) ? customPresets : []
     return [...customs, ...PRESETS]
   }, [customPresets])
-  const preset = useMemo(() => allPresets.find((x) => x.id === presetId) || allPresets[0] || PRESETS[0], [presetId, allPresets])
+  const preset = useMemo(
+    () => allPresets.find((x) => x.id === presetId) || allPresets[0] || PRESETS[0],
+    [presetId, allPresets],
+  )
   const safeTarget = useMemo<number>(() => {
     const valid = typeof target === 'number' && isFinite(target) && target > 0
     const base = valid ? target : preset.defaultTarget
@@ -81,9 +100,9 @@ export const useTasbeehCounter = (options?: UseTasbeehOptions) => {
         vibrate()
         return 0
       }
-        playSound()
-        vibrate()
-        return next
+      playSound()
+      vibrate()
+      return next
     })
   }, [initAudio, safeTarget, playSound, vibrate])
 
@@ -96,9 +115,12 @@ export const useTasbeehCounter = (options?: UseTasbeehOptions) => {
     setRounds(0)
   }, [])
 
-  const selectPreset = useCallback((id: string) => {
-    setPresetId(id)
-  }, [setPresetId])
+  const selectPreset = useCallback(
+    (id: string) => {
+      setPresetId(id)
+    },
+    [setPresetId],
+  )
 
   const toggleSound = useCallback(() => setSoundEnabled((v) => !v), [])
   const toggleVibrate = useCallback(() => setVibrateEnabled((v) => !v), [])
@@ -126,7 +148,22 @@ export const useTasbeehCounter = (options?: UseTasbeehOptions) => {
       toggleSound,
       toggleVibrate,
     }),
-    [count, safeTarget, rounds, preset, soundEnabled, vibrateEnabled, increment, decrement, reset, setTarget, selectPreset, toggleSound, toggleVibrate, allPresets],
+    [
+      count,
+      safeTarget,
+      rounds,
+      preset,
+      soundEnabled,
+      vibrateEnabled,
+      increment,
+      decrement,
+      reset,
+      setTarget,
+      selectPreset,
+      toggleSound,
+      toggleVibrate,
+      allPresets,
+    ],
   )
 
   return value

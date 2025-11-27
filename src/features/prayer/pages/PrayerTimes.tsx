@@ -185,9 +185,7 @@ export const PrayerTimes = () => {
                           key={it.key}
                           className={cn(
                             'transition-colors',
-                            isCurrent || isNext
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border',
+                            isCurrent || isNext ? 'border-primary bg-primary/5' : 'border-border',
                           )}
                         >
                           <CardHeader className="flex flex-row items-center justify-between">
@@ -196,11 +194,7 @@ export const PrayerTimes = () => {
                           </CardHeader>
                           <CardContent className="flex items-center justify-between">
                             <div className="text-2xl font-mono">{format(it.time, 'p')}</div>
-                            {isCurrent && (
-                              <Badge className="ml-2">
-                                Current
-                              </Badge>
-                            )}
+                            {isCurrent && <Badge className="ml-2">Current</Badge>}
                             {isNext && (
                               <Badge variant="secondary" className="ml-2">
                                 Next
@@ -234,10 +228,16 @@ export const PrayerTimes = () => {
                   </TableHeader>
                   <TableBody>
                     {weekly.map((d) => {
-                      const isToday = format(new Date(), 'yyyy-MM-dd') === format(d.date, 'yyyy-MM-dd')
+                      const isToday =
+                        format(new Date(), 'yyyy-MM-dd') === format(d.date, 'yyyy-MM-dd')
                       return (
-                        <TableRow key={d.date.toISOString()} className={cn(isToday ? 'bg-primary/5' : '')}>
-                          <TableCell className="font-medium">{format(d.date, 'EEE dd MMM')}</TableCell>
+                        <TableRow
+                          key={d.date.toISOString()}
+                          className={cn(isToday ? 'bg-primary/5' : '')}
+                        >
+                          <TableCell className="font-medium">
+                            {format(d.date, 'EEE dd MMM')}
+                          </TableCell>
                           <TableCell className="font-mono">{format(d.fajr, 'p')}</TableCell>
                           <TableCell className="font-mono">{format(d.sunrise, 'p')}</TableCell>
                           <TableCell className="font-mono">{format(d.dhuhr, 'p')}</TableCell>

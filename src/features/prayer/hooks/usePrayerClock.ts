@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import type { Coordinates } from './useGeolocation'
 import { CalculationMethod, Coordinates as AdhanCoordinates, Prayer, PrayerTimes } from 'adhan'
 
-const toAdhanCoords = (coords: Coordinates) => new AdhanCoordinates(coords.latitude, coords.longitude)
+const toAdhanCoords = (coords: Coordinates) =>
+  new AdhanCoordinates(coords.latitude, coords.longitude)
 
 export type PrayerClock = {
   now: Date
@@ -66,7 +67,14 @@ export const usePrayerClock = (coords: Coordinates | null, madhab: any | null) =
         return nextPt.fajr
       }
       if (current === Prayer.Fajr) return pt.sunrise
-      const order = [Prayer.Fajr, Prayer.Sunrise, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha] as any[]
+      const order = [
+        Prayer.Fajr,
+        Prayer.Sunrise,
+        Prayer.Dhuhr,
+        Prayer.Asr,
+        Prayer.Maghrib,
+        Prayer.Isha,
+      ] as any[]
       const idx = order.indexOf(current)
       const np = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : null
       return np ? pt.timeForPrayer(np) : null

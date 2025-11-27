@@ -12,7 +12,8 @@ export type WeeklyDayTimes = {
   isha: Date
 }
 
-const toAdhanCoords = (coords: Coordinates) => new AdhanCoordinates(coords.latitude, coords.longitude)
+const toAdhanCoords = (coords: Coordinates) =>
+  new AdhanCoordinates(coords.latitude, coords.longitude)
 
 export const useWeeklyPrayerTimes = (
   coords: Coordinates | null,

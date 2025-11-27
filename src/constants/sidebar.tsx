@@ -1,5 +1,14 @@
 import type { ElementType } from 'react'
-import { HomeIcon, Clock, BookOpen, MessageSquare, Heart, Target, Compass, Calendar } from 'lucide-react'
+import {
+  HomeIcon,
+  Clock,
+  BookOpen,
+  MessageSquare,
+  Heart,
+  Target,
+  Compass,
+  Calendar,
+} from 'lucide-react'
 
 export type SidebarNavItem = {
   title: string
@@ -16,5 +25,5 @@ export const SIDEBAR_MENU: SidebarNavItem[] = [
   { href: '/dua', icon: Heart, title: 'Dua' },
   { href: '/tasbeeh', icon: Target, title: 'Tasbeeh' },
   { href: '/qibla', icon: Compass, title: 'Qibla' },
-  { href: '/calendar', icon: Calendar, title: 'Calendar' }
+  { href: '/calendar', icon: Calendar, title: 'Calendar' },
 ]

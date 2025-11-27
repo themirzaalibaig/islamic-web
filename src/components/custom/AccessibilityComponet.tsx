@@ -14,7 +14,7 @@ export const AccessibilityComponet = () => {
   const [open, setOpen] = useState(false)
   const [size, setSize] = useState<keyof typeof MAP>(() => {
     const saved = localStorage.getItem('app-font-size')
-    return (saved && saved in MAP ? (saved as keyof typeof MAP) : 'md')
+    return saved && saved in MAP ? (saved as keyof typeof MAP) : 'md'
   })
 
   const percent = useMemo(() => MAP[size], [size])

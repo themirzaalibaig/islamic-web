@@ -16,9 +16,7 @@ export const AuthLayout = ({ children }: PropsWithChildren) => {
   })
   return (
     <div className="min-h-svh grid place-items-center p-4">
-      <div className="w-full max-w-md border rounded-lg p-6 bg-background">
-        {children}
-      </div>
+      <div className="w-full max-w-md border rounded-lg p-6 bg-background">{children}</div>
     </div>
   )
 }

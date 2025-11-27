@@ -1,11 +1,9 @@
-import * as React from "react"
-import * as AccordionPrimitive from "@radix-ui/react-accordion"
+import * as React from 'react'
+import * as AccordionPrimitive from '@radix-ui/react-accordion'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 
-function Accordion({
-  ...props
-}: React.ComponentProps<typeof AccordionPrimitive.Root>) {
+function Accordion({ ...props }: React.ComponentProps<typeof AccordionPrimitive.Root>) {
   return <AccordionPrimitive.Root data-slot="accordion" {...props} />
 }
 
@@ -16,7 +14,7 @@ function AccordionItem({
   return (
     <AccordionPrimitive.Item
       data-slot="accordion-item"
-      className={cn("w-full", className)}
+      className={cn('w-full', className)}
       {...props}
     />
   )
@@ -29,7 +27,7 @@ function AccordionTrigger({
   return (
     <AccordionPrimitive.Trigger
       data-slot="accordion-trigger"
-      className={cn("flex w-full items-center", className)}
+      className={cn('flex w-full items-center', className)}
       {...props}
     />
   )
@@ -42,11 +40,10 @@ function AccordionContent({
   return (
     <AccordionPrimitive.Content
       data-slot="accordion-content"
-      className={cn("overflow-hidden", className)}
+      className={cn('overflow-hidden', className)}
       {...props}
     />
   )
 }
 
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }
-

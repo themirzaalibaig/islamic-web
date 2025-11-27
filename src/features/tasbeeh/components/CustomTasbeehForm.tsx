@@ -8,7 +8,10 @@ export const CustomTasbeehForm = () => {
   const [text, setText] = useState('')
   const [defaultTarget, setDefaultTarget] = useState<number>(33)
   const [saving, setSaving] = useState(false)
-  const valid = useMemo(() => name.trim().length > 0 && text.trim().length > 0 && defaultTarget > 0, [name, text, defaultTarget])
+  const valid = useMemo(
+    () => name.trim().length > 0 && text.trim().length > 0 && defaultTarget > 0,
+    [name, text, defaultTarget],
+  )
   const onSubmit = useCallback(async () => {
     if (!valid) return
     setSaving(true)
@@ -32,11 +35,20 @@ export const CustomTasbeehForm = () => {
         </div>
         <div className="space-y-2">
           <Label>Arabic Text</Label>
-          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="سُبْحَانَ اللّٰهِ" />
+          <Input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="سُبْحَانَ اللّٰهِ"
+          />
         </div>
         <div className="space-y-2">
           <Label>Default Target</Label>
-          <Input type="number" min={1} value={defaultTarget} onChange={(e) => setDefaultTarget(Number(e.target.value) || 33)} />
+          <Input
+            type="number"
+            min={1}
+            value={defaultTarget}
+            onChange={(e) => setDefaultTarget(Number(e.target.value) || 33)}
+          />
         </div>
         <div className="sm:col-span-3">
           <Button onClick={onSubmit} disabled={!valid || saving}>

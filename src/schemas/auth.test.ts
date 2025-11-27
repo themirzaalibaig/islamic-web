@@ -42,4 +42,3 @@ describe('Auth Schemas', () => {
     expect(res.success).toBe(true)
   })
 })
-

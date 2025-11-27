@@ -98,7 +98,9 @@ export interface UseApiReturn<TData = any, TError = any, TVariables = any> {
   del: (config?: AxiosRequestConfig) => Promise<AxiosResponse<TData>>
   request: <R = TData>(req: ApiRequest) => Promise<AxiosResponse<R>>
   uploadFile: (file: File | File[], config?: AxiosRequestConfig) => Promise<AxiosResponse<TData>>
-  parallel: <T = any>(requests: ParallelRequest<T>[]) => Array<{
+  parallel: <T = any>(
+    requests: ParallelRequest<T>[],
+  ) => Array<{
     data: T | undefined
     isLoading: boolean
     isError: boolean
@@ -114,7 +116,8 @@ export interface UseApiReturn<TData = any, TError = any, TVariables = any> {
   setAuth: (enabled: boolean, token?: string) => void
   makeKey: (url: string, params?: any) => any[]
   useInfiniteApi: <TInfiniteData = any, TInfiniteError = any>(
-    infiniteOptions?: InfiniteApiRequest & UseInfiniteQueryOptions<TInfiniteData, TInfiniteError, InfiniteData<TInfiniteData>>
+    infiniteOptions?: InfiniteApiRequest &
+      UseInfiniteQueryOptions<TInfiniteData, TInfiniteError, InfiniteData<TInfiniteData>>,
   ) => {
     data: InfiniteData<TInfiniteData> | undefined
     fetchNextPage: (options?: any) => void

@@ -46,4 +46,3 @@ export const VerseListSkeleton = ({ count = 6 }: { count?: number }) => (
     ))}
   </div>
 )
-

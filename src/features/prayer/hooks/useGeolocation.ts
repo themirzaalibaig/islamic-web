@@ -46,4 +46,3 @@ export const useGeolocation = () => {
 
   return value
 }
-

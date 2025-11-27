@@ -61,7 +61,9 @@ export const useFiqah = () => {
     load()
   }, [load])
 
-  const value = useMemo(() => ({ fiqah, loading, error, reload: load }), [fiqah, loading, error, load])
+  const value = useMemo(
+    () => ({ fiqah, loading, error, reload: load }),
+    [fiqah, loading, error, load],
+  )
   return value
 }
-

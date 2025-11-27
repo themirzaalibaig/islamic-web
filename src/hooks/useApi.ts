@@ -1,28 +1,46 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query'
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  useQueries,
+} from '@tanstack/react-query'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import { useCallback, useState } from 'react'
 import type { UseInfiniteQueryOptions, InfiniteData } from '@tanstack/react-query'
-import type { ApiRequest, ParallelRequest, InfiniteApiRequest, UseApiReturn, UseApiOptions, ResponseMeta, ValidationError } from '../types'
+import type {
+  ApiRequest,
+  ParallelRequest,
+  InfiniteApiRequest,
+  UseApiReturn,
+  UseApiOptions,
+  ResponseMeta,
+  ValidationError,
+} from '../types'
 import { api } from '@/lib/axios'
 import { useDebounce, useThrottle } from '@reactuses/core'
 import { toast } from 'react-toastify'
 import { get, set, cloneDeep } from 'lodash'
 
-const debounceTimers = new Map<string, { timer: any; resolvers: Array<(v: any) => void>; rejecters: Array<(e: any) => void> }>()
+const debounceTimers = new Map<
+  string,
+  { timer: any; resolvers: Array<(v: any) => void>; rejecters: Array<(e: any) => void> }
+>()
 const throttleMap = new Map<string, number>()
-
- 
 
 export const useApi = <TData = any, E = any, V = any>(
   queryKey: any[],
   defaultUrl: string,
-  options?: UseApiOptions<TData, E, V>
+  options?: UseApiOptions<TData, E, V>,
 ): UseApiReturn<TData, E, V> => {
   const queryClient = useQueryClient()
   const [authEnabled, setAuthEnabled] = useState(options?.auth ?? true)
 
-  const makeKey = useCallback((url: string, params?: any) => [url, params ? JSON.stringify(params) : undefined], [])
+  const makeKey = useCallback(
+    (url: string, params?: any) => [url, params ? JSON.stringify(params) : undefined],
+    [],
+  )
 
   const request = useCallback(
     async <R = TData>(req: ApiRequest, signal?: AbortSignal): Promise<AxiosResponse<R>> => {
@@ -41,7 +59,7 @@ export const useApi = <TData = any, E = any, V = any>(
       }
       return api.request<R>(cfg)
     },
-    [defaultUrl, authEnabled]
+    [defaultUrl, authEnabled],
   )
 
   const keyStr = JSON.stringify(queryKey)
@@ -53,14 +71,17 @@ export const useApi = <TData = any, E = any, V = any>(
   const query = useQuery<TData, E, TData>({
     queryKey: effectiveQueryKey,
     queryFn: ({ signal }) => {
-      const run = () => request<TData>({ url: defaultUrl, method: 'get' }, signal).then((res) => res.data as TData)
+      const run = () =>
+        request<TData>({ url: defaultUrl, method: 'get' }, signal).then((res) => res.data as TData)
       const k = JSON.stringify(queryKey)
       if (options?.throttleMs && options.throttleMs > 0) {
         const last = throttleMap.get(k) || 0
         const now = Date.now()
         if (now - last < options.throttleMs) {
           const wait = (options.throttleMs || 0) - (now - last)
-          return new Promise<TData>((resolve) => setTimeout(() => resolve(run()), wait > 0 ? wait : 0))
+          return new Promise<TData>((resolve) =>
+            setTimeout(() => resolve(run()), wait > 0 ? wait : 0),
+          )
         }
         throttleMap.set(k, now)
       }
@@ -132,7 +153,11 @@ export const useApi = <TData = any, E = any, V = any>(
           const idGetter = options?.getId || ((x: any) => x?.id)
           const path = options?.collectionPath
           const draft = cloneDeep(previous as any)
-          const target = path ? get(draft, path) : Array.isArray(draft) ? draft : Object.values(draft).find((v) => Array.isArray(v))
+          const target = path
+            ? get(draft, path)
+            : Array.isArray(draft)
+              ? draft
+              : Object.values(draft).find((v) => Array.isArray(v))
           if (!target) return previous as TData
           if (method === 'post') {
             const item = (variables as any) ?? {}
@@ -190,7 +215,8 @@ export const useApi = <TData = any, E = any, V = any>(
     return useQueries({
       queries: requests.map(({ key, request, options }) => ({
         queryKey: Array.isArray(key) ? key : [key],
-        queryFn: ({ signal }) => api.request<P>({ ...request, signal }).then((res) => res.data as P),
+        queryFn: ({ signal }) =>
+          api.request<P>({ ...request, signal }).then((res) => res.data as P),
         ...options,
       })),
     }).map((q, i) => ({
@@ -218,30 +244,43 @@ export const useApi = <TData = any, E = any, V = any>(
 
   const invalidate = (keys = queryKey) => queryClient.invalidateQueries({ queryKey: keys })
   const refetch = () => queryClient.refetchQueries({ queryKey })
-  const setData = (updater: (old: TData | undefined) => TData) => queryClient.setQueryData(queryKey, updater)
+  const setData = (updater: (old: TData | undefined) => TData) =>
+    queryClient.setQueryData(queryKey, updater)
   const remove = () => queryClient.removeQueries({ queryKey })
 
   const cancel = () => {
     queryClient.cancelQueries({ queryKey }, { revert: true, silent: false })
   }
 
-  
-
   const useInfiniteApi = <TInfiniteQueryData = any, TInfiniteError = any>(
-    infiniteOptions?: InfiniteApiRequest & UseInfiniteQueryOptions<TInfiniteQueryData, TInfiniteError, InfiniteData<TInfiniteQueryData>>
+    infiniteOptions?: InfiniteApiRequest &
+      UseInfiniteQueryOptions<TInfiniteQueryData, TInfiniteError, InfiniteData<TInfiniteQueryData>>,
   ) => {
     const initialPageParam = infiniteOptions?.initialPageParam ?? 0
     const getNextPageParam = infiniteOptions?.getNextPageParam
-    const { getNextPageParam: _g, initialPageParam: _i, ...restOptions } = (infiniteOptions || {}) as any
-    const infiniteQuery = useInfiniteQuery<TInfiniteQueryData, TInfiniteError, InfiniteData<TInfiniteQueryData>>({
+    const {
+      getNextPageParam: _g,
+      initialPageParam: _i,
+      ...restOptions
+    } = (infiniteOptions || {}) as any
+    const infiniteQuery = useInfiniteQuery<
+      TInfiniteQueryData,
+      TInfiniteError,
+      InfiniteData<TInfiniteQueryData>
+    >({
       queryKey,
       queryFn: async ({ pageParam = initialPageParam, signal }) => {
         const paginatedUrl = `${defaultUrl}?page=${pageParam}&limit=10`
-        const response = await request<TInfiniteQueryData>({ url: paginatedUrl, method: 'get' }, signal)
+        const response = await request<TInfiniteQueryData>(
+          { url: paginatedUrl, method: 'get' },
+          signal,
+        )
         return response.data as TInfiniteQueryData
       },
       getNextPageParam: (lastPage: any, allPages: any[]) =>
-        getNextPageParam ? getNextPageParam(lastPage, allPages) : (lastPage as any).nextCursor || undefined,
+        getNextPageParam
+          ? getNextPageParam(lastPage, allPages)
+          : (lastPage as any).nextCursor || undefined,
       initialPageParam,
       staleTime: 1000 * 60 * 5,
       ...restOptions,
@@ -267,7 +306,7 @@ export const useApi = <TData = any, E = any, V = any>(
 
   const raw = query.data as any
   const meta: ResponseMeta | undefined = raw && raw.meta ? (raw.meta as ResponseMeta) : undefined
-  const payload = raw && raw.success !== undefined && raw.timestamp ? raw.data ?? undefined : raw
+  const payload = raw && raw.success !== undefined && raw.timestamp ? (raw.data ?? undefined) : raw
   const extracted = typeof payload === 'object' && payload ? payload : undefined
 
   return {
@@ -281,83 +320,97 @@ export const useApi = <TData = any, E = any, V = any>(
     isError: query.isError || mutation.isError,
     isSuccess: query.isSuccess,
     error: (query.error || mutation.error) as E | null,
-    status: query.isLoading ? 'loading' : query.isError ? 'error' : query.isSuccess ? 'success' : 'idle',
+    status: query.isLoading
+      ? 'loading'
+      : query.isError
+        ? 'error'
+        : query.isSuccess
+          ? 'success'
+          : 'idle',
     isMutating: mutation.isPending,
     mutate: mutation.mutate,
     mutateAsync: mutation.mutateAsync,
     get: (config?: AxiosRequestConfig) => request({ method: 'get', url: defaultUrl, config }),
     post: (data?: V, config?: AxiosRequestConfig) =>
-      request<TData>({ method: 'post', url: defaultUrl, data, config }).then((res) => {
-        if (!options?.silent) {
-          const msg = (res?.data && (res.data as any).message) || 'Success'
-          toast.success(String(msg))
-        }
-        return res as AxiosResponse<TData>
-      }).catch((err: any) => {
-        if (!options?.silent) {
-          const r = err?.response?.data
-          const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
-          if (!hasValidation) {
-            const msg = (r && r.message) || err?.message || 'Error'
-            toast.error(String(msg))
+      request<TData>({ method: 'post', url: defaultUrl, data, config })
+        .then((res) => {
+          if (!options?.silent) {
+            const msg = (res?.data && (res.data as any).message) || 'Success'
+            toast.success(String(msg))
           }
-        }
-        throw err
-      }),
+          return res as AxiosResponse<TData>
+        })
+        .catch((err: any) => {
+          if (!options?.silent) {
+            const r = err?.response?.data
+            const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
+            if (!hasValidation) {
+              const msg = (r && r.message) || err?.message || 'Error'
+              toast.error(String(msg))
+            }
+          }
+          throw err
+        }),
     put: (data?: V, config?: AxiosRequestConfig) =>
-      request<TData>({ method: 'put', url: defaultUrl, data, config }).then((res) => {
-        if (!options?.silent) {
-          const msg = (res?.data && (res.data as any).message) || 'Success'
-          toast.success(String(msg))
-        }
-        return res as AxiosResponse<TData>
-      }).catch((err: any) => {
-        if (!options?.silent) {
-          const r = err?.response?.data
-          const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
-          if (!hasValidation) {
-            const msg = (r && r.message) || err?.message || 'Error'
-            toast.error(String(msg))
+      request<TData>({ method: 'put', url: defaultUrl, data, config })
+        .then((res) => {
+          if (!options?.silent) {
+            const msg = (res?.data && (res.data as any).message) || 'Success'
+            toast.success(String(msg))
           }
-        }
-        throw err
-      }),
+          return res as AxiosResponse<TData>
+        })
+        .catch((err: any) => {
+          if (!options?.silent) {
+            const r = err?.response?.data
+            const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
+            if (!hasValidation) {
+              const msg = (r && r.message) || err?.message || 'Error'
+              toast.error(String(msg))
+            }
+          }
+          throw err
+        }),
     patch: (data?: V, config?: AxiosRequestConfig) =>
-      request<TData>({ method: 'patch', url: defaultUrl, data, config }).then((res) => {
-        if (!options?.silent) {
-          const msg = (res?.data && (res.data as any).message) || 'Success'
-          toast.success(String(msg))
-        }
-        return res as AxiosResponse<TData>
-      }).catch((err: any) => {
-        if (!options?.silent) {
-          const r = err?.response?.data
-          const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
-          if (!hasValidation) {
-            const msg = (r && r.message) || err?.message || 'Error'
-            toast.error(String(msg))
+      request<TData>({ method: 'patch', url: defaultUrl, data, config })
+        .then((res) => {
+          if (!options?.silent) {
+            const msg = (res?.data && (res.data as any).message) || 'Success'
+            toast.success(String(msg))
           }
-        }
-        throw err
-      }),
+          return res as AxiosResponse<TData>
+        })
+        .catch((err: any) => {
+          if (!options?.silent) {
+            const r = err?.response?.data
+            const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
+            if (!hasValidation) {
+              const msg = (r && r.message) || err?.message || 'Error'
+              toast.error(String(msg))
+            }
+          }
+          throw err
+        }),
     del: (config?: AxiosRequestConfig) =>
-      request<TData>({ method: 'delete', url: defaultUrl, config }).then((res) => {
-        if (!options?.silent) {
-          const msg = (res?.data && (res.data as any).message) || 'Success'
-          toast.success(String(msg))
-        }
-        return res as AxiosResponse<TData>
-      }).catch((err: any) => {
-        if (!options?.silent) {
-          const r = err?.response?.data
-          const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
-          if (!hasValidation) {
-            const msg = (r && r.message) || err?.message || 'Error'
-            toast.error(String(msg))
+      request<TData>({ method: 'delete', url: defaultUrl, config })
+        .then((res) => {
+          if (!options?.silent) {
+            const msg = (res?.data && (res.data as any).message) || 'Success'
+            toast.success(String(msg))
           }
-        }
-        throw err
-      }),
+          return res as AxiosResponse<TData>
+        })
+        .catch((err: any) => {
+          if (!options?.silent) {
+            const r = err?.response?.data
+            const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
+            if (!hasValidation) {
+              const msg = (r && r.message) || err?.message || 'Error'
+              toast.error(String(msg))
+            }
+          }
+          throw err
+        }),
     request,
     uploadFile,
     parallel: useParallelApi,

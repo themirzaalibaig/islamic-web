@@ -22,7 +22,9 @@ export const PresetList = ({ onUse }: Props) => {
                 <div key={p.id} className="flex items-center justify-between p-3 border rounded-md">
                   <div>
                     <div className="font-medium">{p.name}</div>
-                    <Badge variant="outline" className="mt-1">{p.text}</Badge>
+                    <Badge variant="outline" className="mt-1">
+                      {p.text}
+                    </Badge>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{p.defaultTarget}</Badge>
@@ -49,7 +51,9 @@ export const PresetList = ({ onUse }: Props) => {
             <div key={p.id} className="flex items-center justify-between p-3 border rounded-md">
               <div>
                 <div className="font-medium">{p.name}</div>
-                <Badge variant="outline" className="mt-1">{p.text}</Badge>
+                <Badge variant="outline" className="mt-1">
+                  {p.text}
+                </Badge>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">{p.defaultTarget}</Badge>

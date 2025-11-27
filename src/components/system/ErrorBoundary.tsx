@@ -17,7 +17,10 @@ class Boundary extends React.Component<BoundaryProps, { hasError: boolean }> {
   }
 }
 
-export const ErrorBoundary = ({ children, fallback }: PropsWithChildren<{ fallback?: ReactNode }>) => {
+export const ErrorBoundary = ({
+  children,
+  fallback,
+}: PropsWithChildren<{ fallback?: ReactNode }>) => {
   const f = useMemo(() => fallback ?? <div className="p-4">Something went wrong</div>, [fallback])
   return <Boundary fallback={f}>{children}</Boundary>
 }

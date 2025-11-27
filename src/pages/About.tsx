@@ -3,4 +3,4 @@ export const About = () => (
     <h2 className="text-2xl font-semibold">About</h2>
     <p className="text-sm text-muted-foreground">This page is routed via an array config.</p>
   </div>
-);
+)

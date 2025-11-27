@@ -1,7 +1,8 @@
-
 import { ENV } from '@/config'
 
-export const toQueryString = <TParams extends object = Record<string, unknown>>(params?: TParams): string => {
+export const toQueryString = <TParams extends object = Record<string, unknown>>(
+  params?: TParams,
+): string => {
   if (!params) return ''
   const sp = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
@@ -20,33 +21,49 @@ export const toQueryString = <TParams extends object = Record<string, unknown>>(
   return qs ? `?${qs}` : ''
 }
 
-export const endpoint = <TParams extends object = Record<string, unknown>>(path: string, params?: TParams, base: string = ENV.API_ENDPOINT || ''): string => {
+export const endpoint = <TParams extends object = Record<string, unknown>>(
+  path: string,
+  params?: TParams,
+  base: string = ENV.API_ENDPOINT || '',
+): string => {
   const qs = toQueryString<TParams>(params)
   return `${base}${path}${qs}`
 }
 
-export const createResourceEndpoints = <TParams extends object = Record<string, unknown>, TId extends string | number = string | number>(resourcePath: string, base: string = ENV.API_ENDPOINT || '') => {
+export const createResourceEndpoints = <
+  TParams extends object = Record<string, unknown>,
+  TId extends string | number = string | number,
+>(
+  resourcePath: string,
+  base: string = ENV.API_ENDPOINT || '',
+) => {
   return {
     ALL: (params?: TParams) => endpoint<TParams>(resourcePath, params, base),
     CREATE: () => endpoint<TParams>(resourcePath, undefined, base),
-    GET_BY_ID: (id: TId, params?: TParams) => endpoint<TParams>(`${resourcePath}/${id}`, params, base),
+    GET_BY_ID: (id: TId, params?: TParams) =>
+      endpoint<TParams>(`${resourcePath}/${id}`, params, base),
     UPDATE: (id: TId) => endpoint<TParams>(`${resourcePath}/${id}`, undefined, base),
     DELETE: (id: TId) => endpoint<TParams>(`${resourcePath}/${id}`, undefined, base),
   }
 }
 
-export const createCustomEndpoints = <TRoutes extends Record<string, (...args: any[]) => { path: string; params?: any }>, TParams extends object = Record<string, unknown>>(
+export const createCustomEndpoints = <
+  TRoutes extends Record<string, (...args: any[]) => { path: string; params?: any }>,
+  TParams extends object = Record<string, unknown>,
+>(
   resourcePath: string,
   routes: TRoutes,
-  base: string = ENV.API_ENDPOINT || ''
+  base: string = ENV.API_ENDPOINT || '',
 ) => {
   const out = {} as { [K in keyof TRoutes]: (...args: Parameters<TRoutes[K]>) => string }
-  (Object.entries(routes) as Array<[keyof TRoutes, TRoutes[keyof TRoutes]]>).forEach(([key, fn]) => {
-    out[key] = ((...args: Parameters<typeof fn>) => {
-      const def = (fn as any)(...args) as { path: string; params?: TParams }
-      const p = def.path.startsWith('/') ? def.path : `${resourcePath}/${def.path}`
-      return endpoint<TParams>(p, def.params, base)
-    }) as any
-  })
+  ;(Object.entries(routes) as Array<[keyof TRoutes, TRoutes[keyof TRoutes]]>).forEach(
+    ([key, fn]) => {
+      out[key] = ((...args: Parameters<typeof fn>) => {
+        const def = (fn as any)(...args) as { path: string; params?: TParams }
+        const p = def.path.startsWith('/') ? def.path : `${resourcePath}/${def.path}`
+        return endpoint<TParams>(p, def.params, base)
+      }) as any
+    },
+  )
   return out
 }

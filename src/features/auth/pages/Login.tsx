@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,7 +11,11 @@ import {
   FormMessage,
   Button,
   Input,
-  Card, CardContent, CardDescription, CardHeader, CardTitle
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@/components/ui'
 import { loginSchema, type LoginInput } from '@/schemas'
 import { useAuth } from '@/features/auth'

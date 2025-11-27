@@ -4,4 +4,3 @@ export type TasbeehPreset = {
   text: string
   defaultTarget: number
 }
-

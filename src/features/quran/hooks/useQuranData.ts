@@ -29,7 +29,11 @@ export function useQuranData(defaultChapterId?: number) {
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const { data, isLoading: surahsLoading, isError: surahsError } = useQuery<{ chapters: Surah[] }>({
+  const {
+    data,
+    isLoading: surahsLoading,
+    isError: surahsError,
+  } = useQuery<{ chapters: Surah[] }>({
     queryKey: ['surahs'],
     queryFn: async () => {
       const { data } = await axios.get<{ chapters: Surah[] }>(`${API_BASE}/chapters`, {
@@ -41,12 +45,16 @@ export function useQuranData(defaultChapterId?: number) {
 
   const surahs = data?.chapters || []
 
-  const { data: versesData, isLoading: versesLoading, isError: versesError } = useQuery<{ verses: Verse[] }>({
+  const {
+    data: versesData,
+    isLoading: versesLoading,
+    isError: versesError,
+  } = useQuery<{ verses: Verse[] }>({
     queryKey: ['verses', selectedSurah?.id],
     queryFn: async () => {
       if (!selectedSurah) return { verses: [] }
       const { data } = await axios.get<{ verses: Verse[] }>(
-        `${API_BASE}/verses/by_chapter/${selectedSurah.id}?fields=text_uthmani&per_page=all`
+        `${API_BASE}/verses/by_chapter/${selectedSurah.id}?fields=text_uthmani&per_page=all`,
       )
       return data
     },
@@ -80,8 +88,13 @@ export function useQuranData(defaultChapterId?: number) {
   }
 
   const filteredSurahs = useMemo(
-    () => surahs.filter((s) => s.name_simple.toLowerCase().includes(searchQuery.toLowerCase()) || s.id.toString().includes(searchQuery)),
-    [surahs, searchQuery]
+    () =>
+      surahs.filter(
+        (s) =>
+          s.name_simple.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          s.id.toString().includes(searchQuery),
+      ),
+    [surahs, searchQuery],
   )
 
   return {

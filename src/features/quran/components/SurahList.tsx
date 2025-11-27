@@ -11,12 +11,24 @@ type Props = {
   onSelectSurah: (id: number) => void
 }
 
-export const SurahList = ({ heightStyle, searchQuery, setSearchQuery, filteredSurahs, selectedSurah, onSelectSurah }: Props) => {
+export const SurahList = ({
+  heightStyle,
+  searchQuery,
+  setSearchQuery,
+  filteredSurahs,
+  selectedSurah,
+  onSelectSurah,
+}: Props) => {
   return (
     <section className="w-1/3 p-4 border-r" style={heightStyle}>
       <div className="flex items-center gap-2 mb-3">
         <div className="relative flex-1">
-          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Surah" className="pl-8" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search Surah"
+            className="pl-8"
+          />
           <Search className="size-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
         </div>
       </div>
@@ -30,12 +42,18 @@ export const SurahList = ({ heightStyle, searchQuery, setSearchQuery, filteredSu
           >
             <div className="flex justify-between items-center">
               <span className="font-medium text-sm md:text-base">{s.name_simple}</span>
-              <span className="text-xs md:text-sm text-muted-foreground">{s.verses_count} verses</span>
+              <span className="text-xs md:text-sm text-muted-foreground">
+                {s.verses_count} verses
+              </span>
             </div>
-            <div className="text-xs md:text-sm text-muted-foreground mt-1">{s.translated_name?.name || ''}</div>
+            <div className="text-xs md:text-sm text-muted-foreground mt-1">
+              {s.translated_name?.name || ''}
+            </div>
             <div className="flex justify-between items-center mt-1 text-xs text-muted-foreground">
               <span>{s.name_arabic}</span>
-              <span>{s.revelation_place} · #{s.revelation_order}</span>
+              <span>
+                {s.revelation_place} · #{s.revelation_order}
+              </span>
             </div>
           </div>
         ))}
@@ -43,4 +61,3 @@ export const SurahList = ({ heightStyle, searchQuery, setSearchQuery, filteredSu
     </section>
   )
 }
-

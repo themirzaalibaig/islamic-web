@@ -1,5 +1,18 @@
 import { useMemo } from 'react'
-import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Separator, Slider, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Badge,
+  Separator,
+  Slider,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui'
 import { useTasbeehCounter } from '@/features/tasbeeh/hooks'
 import { cn } from '@/lib/utils'
 import { Volume2, VolumeX, Vibrate, Hand, RotateCcw } from 'lucide-react'
@@ -37,7 +50,9 @@ export const DigitalTasbeeh = ({ className }: Props) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 justify-center">
           {preset.name}
-          <Badge variant="outline" className="font-mono">{preset.text}</Badge>
+          <Badge variant="outline" className="font-mono">
+            {preset.text}
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -54,14 +69,20 @@ export const DigitalTasbeeh = ({ className }: Props) => {
             <div className="h-2 rounded bg-muted">
               <div className="h-2 rounded bg-primary" style={{ width: `${progress}%` }} />
             </div>
-            <div className="mt-1 text-center text-xs text-muted-foreground">Progress {progress}%</div>
+            <div className="mt-1 text-center text-xs text-muted-foreground">
+              Progress {progress}%
+            </div>
           </div>
-          <div className="text-sm text-muted-foreground">Target {target} • Rounds {rounds}</div>
+          <div className="text-sm text-muted-foreground">
+            Target {target} • Rounds {rounds}
+          </div>
           <div className="w-full space-y-4">
             <div className="flex flex-wrap items-center justify-center gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">Presets</Button>
+                  <Button variant="outline" size="sm">
+                    Presets
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center">
                   {presets.map((p) => (

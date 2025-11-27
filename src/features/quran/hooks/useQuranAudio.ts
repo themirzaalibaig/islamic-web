@@ -35,7 +35,16 @@ export function useQuranAudio() {
     progress: number
     duration: number
     currentTime: number
-  }>({ type: null, isPlaying: false, surahName: '', verseKey: '', audioElement: null, progress: 0, duration: 0, currentTime: 0 })
+  }>({
+    type: null,
+    isPlaying: false,
+    surahName: '',
+    verseKey: '',
+    audioElement: null,
+    progress: 0,
+    duration: 0,
+    currentTime: 0,
+  })
 
   const surahAudioRef = useRef<HTMLAudioElement | null>(null)
   const verseAudioRef = useRef<HTMLAudioElement | null>(null)
@@ -58,7 +67,17 @@ export function useQuranAudio() {
       surahAudioRef.current.src = url
       surahAudioRef.current.currentTime = 0
     }
-    setCurrentAudio((prev) => ({ ...prev, type: 'surah', isPlaying: false, surahName: surah?.name_simple || '', verseKey: '', audioElement: surahAudioRef.current, progress: 0, duration: 0, currentTime: 0 }))
+    setCurrentAudio((prev) => ({
+      ...prev,
+      type: 'surah',
+      isPlaying: false,
+      surahName: surah?.name_simple || '',
+      verseKey: '',
+      audioElement: surahAudioRef.current,
+      progress: 0,
+      duration: 0,
+      currentTime: 0,
+    }))
   }
 
   const toggleSurahPlayback = (surahName?: string) => {
@@ -68,7 +87,16 @@ export function useQuranAudio() {
       el.playbackRate = playbackSpeed
       el.play()
       setIsSurahPlaying(true)
-      setCurrentAudio({ type: 'surah', isPlaying: true, surahName: surahName || '', verseKey: '', audioElement: el, progress: 0, duration: el.duration || 0, currentTime: el.currentTime || 0 })
+      setCurrentAudio({
+        type: 'surah',
+        isPlaying: true,
+        surahName: surahName || '',
+        verseKey: '',
+        audioElement: el,
+        progress: 0,
+        duration: el.duration || 0,
+        currentTime: el.currentTime || 0,
+      })
     } else {
       el.pause()
       setCurrentAudio((prev) => ({ ...prev, isPlaying: false }))
@@ -92,7 +120,16 @@ export function useQuranAudio() {
     if (data.code === 200 && data.data.audio) {
       setPlayingVerseKey(verseKey)
       setIsVersePlaying(true)
-      setCurrentAudio({ type: 'verse', isPlaying: true, surahName: surah?.name_simple || '', verseKey, audioElement: audio, progress: 0, duration: 0, currentTime: 0 })
+      setCurrentAudio({
+        type: 'verse',
+        isPlaying: true,
+        surahName: surah?.name_simple || '',
+        verseKey,
+        audioElement: audio,
+        progress: 0,
+        duration: 0,
+        currentTime: 0,
+      })
       if (audio) {
         audio.src = data.data.audio as string
         audio.playbackRate = playbackSpeed
@@ -101,7 +138,11 @@ export function useQuranAudio() {
     }
   }
 
-  const handleReciterChange = async (newId: string, selectedSurah?: Surah | null, surahs: Surah[] = []) => {
+  const handleReciterChange = async (
+    newId: string,
+    selectedSurah?: Surah | null,
+    surahs: Surah[] = [],
+  ) => {
     const wasPlayingSurah = currentAudio.type === 'surah' && currentAudio.isPlaying
     // Stop existing audio immediately
     currentAudio.audioElement?.pause()
@@ -117,7 +158,11 @@ export function useQuranAudio() {
         surahAudioRef.current.playbackRate = playbackSpeed
         void surahAudioRef.current.play()
         setIsSurahPlaying(true)
-        setCurrentAudio((prev) => ({ ...prev, isPlaying: true, audioElement: surahAudioRef.current }))
+        setCurrentAudio((prev) => ({
+          ...prev,
+          isPlaying: true,
+          audioElement: surahAudioRef.current,
+        }))
       }
     }
   }
@@ -135,7 +180,12 @@ export function useQuranAudio() {
     const el = currentAudio.audioElement
     if (!el || isNaN(el.duration)) return
     const prog = (el.currentTime / el.duration) * 100
-    setCurrentAudio((prev) => ({ ...prev, progress: prog, currentTime: el.currentTime, duration: el.duration }))
+    setCurrentAudio((prev) => ({
+      ...prev,
+      progress: prog,
+      currentTime: el.currentTime,
+      duration: el.duration,
+    }))
   }
 
   const refreshCurrentAudio = () => {
@@ -171,4 +221,3 @@ export function useQuranAudio() {
     refreshCurrentAudio,
   }
 }
-

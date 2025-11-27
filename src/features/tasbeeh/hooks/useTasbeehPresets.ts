@@ -19,7 +19,12 @@ export const useTasbeehPresets = () => {
       .eq('user_id', session.user.id)
     if (error) setError(error.message)
     const mapped = Array.isArray(data)
-      ? data.map((d: any) => ({ id: String(d.id), name: d.name, text: d.text, defaultTarget: Number(d.default_target) || 33 }))
+      ? data.map((d: any) => ({
+          id: String(d.id),
+          name: d.name,
+          text: d.text,
+          defaultTarget: Number(d.default_target) || 33,
+        }))
       : []
     setItems(mapped)
     setLoading(false)
@@ -40,14 +45,21 @@ export const useTasbeehPresets = () => {
       if (error) return { error: error.message }
       setItems((prev) => [
         ...prev,
-        { id: String((data as any).id), name: (data as any).name, text: (data as any).text, defaultTarget: Number((data as any).default_target) || defaultTarget },
+        {
+          id: String((data as any).id),
+          name: (data as any).name,
+          text: (data as any).text,
+          defaultTarget: Number((data as any).default_target) || defaultTarget,
+        },
       ])
       return { error: undefined }
     },
     [session],
   )
 
-  const value = useMemo(() => ({ items, loading, error, reload: load, create }), [items, loading, error, load, create])
+  const value = useMemo(
+    () => ({ items, loading, error, reload: load, create }),
+    [items, loading, error, load, create],
+  )
   return value
 }
-

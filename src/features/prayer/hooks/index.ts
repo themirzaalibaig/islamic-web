@@ -3,4 +3,3 @@ export * from './useFiqah'
 export * from './usePrayerTimes'
 export * from './usePrayerClock'
 export * from './useWeeklyPrayerTimes'
-

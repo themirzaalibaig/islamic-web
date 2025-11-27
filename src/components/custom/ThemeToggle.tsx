@@ -21,7 +21,7 @@ export const ThemeToggle = () => {
       light: 'light',
       dark: 'dark',
       system: systemIsDark ? 'dark' : 'light',
-    }
+    },
   })
 
   const options = ['light', 'dark', 'system'] as const
@@ -29,12 +29,12 @@ export const ThemeToggle = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size={"icon"}>
-         <SunMoon />
+        <Button variant="outline" size={'icon'}>
+          <SunMoon />
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align='end'>
+      <DropdownMenuContent align="end">
         <DropdownMenuLabel>Theme</DropdownMenuLabel>
         <DropdownMenuSeparator />
 

@@ -17,16 +17,16 @@ export type CalculatedPrayerMeta = {
   previousPrayer: any | null
 }
 
-const toAdhanCoords = (coords: Coordinates) => new AdhanCoordinates(coords.latitude, coords.longitude)
+const toAdhanCoords = (coords: Coordinates) =>
+  new AdhanCoordinates(coords.latitude, coords.longitude)
 
 export const usePrayerTimes = (coords: Coordinates | null, madhab: any | null) => {
   const result = useMemo(() => {
-    if (!coords || !madhab) return null as
-      | null
-      | {
-          times: DailyPrayerTimes
-          meta: CalculatedPrayerMeta
-        }
+    if (!coords || !madhab)
+      return null as null | {
+        times: DailyPrayerTimes
+        meta: CalculatedPrayerMeta
+      }
     const date = new Date()
     const parameters = CalculationMethod.MoonsightingCommittee()
     if (madhab) (parameters as any).madhab = madhab
@@ -43,7 +43,14 @@ export const usePrayerTimes = (coords: Coordinates | null, madhab: any | null) =
     const current = pt.currentPrayer()
     const next = pt.nextPrayer()
     const previous = (() => {
-      const order = [Prayer.Fajr, Prayer.Sunrise, Prayer.Dhuhr, Prayer.Asr, Prayer.Maghrib, Prayer.Isha] as any[]
+      const order = [
+        Prayer.Fajr,
+        Prayer.Sunrise,
+        Prayer.Dhuhr,
+        Prayer.Asr,
+        Prayer.Maghrib,
+        Prayer.Isha,
+      ] as any[]
       const idx = current ? order.indexOf(current) : -1
       return idx > 0 ? order[idx - 1] : null
     })()
@@ -77,4 +84,3 @@ export const formatPrayerName = (p: any | null) => {
       return '—'
   }
 }
-

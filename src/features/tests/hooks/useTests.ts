@@ -9,8 +9,14 @@ export const useTests = () => {
     getId: (x) => (x as Test).id,
   })
 
-  const create = useCallback((payload: Test) => api.post(payload, { url: ENDPOINTS.TESTS.CREATE() }), [api])
-  const update = useCallback((payload: Test) => api.put(payload, { url: ENDPOINTS.TESTS.UPDATE(payload.id) }), [api])
+  const create = useCallback(
+    (payload: Test) => api.post(payload, { url: ENDPOINTS.TESTS.CREATE() }),
+    [api],
+  )
+  const update = useCallback(
+    (payload: Test) => api.put(payload, { url: ENDPOINTS.TESTS.UPDATE(payload.id) }),
+    [api],
+  )
   const remove = useCallback((id: number) => api.del({ url: ENDPOINTS.TESTS.DELETE(id) }), [api])
 
   const items = useMemo(() => (Array.isArray(api.data) ? api.data : []), [api.data])

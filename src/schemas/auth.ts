@@ -32,4 +32,3 @@ export const forgotPasswordSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>
 export type SignupInput = z.infer<typeof signupSchema>
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
-
