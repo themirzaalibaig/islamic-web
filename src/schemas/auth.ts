@@ -11,7 +11,6 @@ export const passwordSchema = z
 export const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
   password: z.string().min(1, 'Password is required'),
-  remember: z.boolean().optional().default(true),
 })
 
 export const signupSchema = z
@@ -20,7 +19,6 @@ export const signupSchema = z
     email: z.string().email('Enter a valid email'),
     password: passwordSchema,
     confirmPassword: z.string(),
-    terms: z.boolean().refine((v) => v, 'You must accept the terms'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ['confirmPassword'],

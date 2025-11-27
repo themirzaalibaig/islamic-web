@@ -1,33 +1,42 @@
-import { useState } from 'react'
+
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AuthLayout } from '@/components/layouts/AuthLayout'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Button,
+  Input,
+  Card, CardContent, CardDescription, CardHeader, CardTitle
+} from '@/components/ui'
 import { loginSchema, type LoginInput } from '@/schemas'
 import { useAuth } from '@/features/auth'
+import { Lock, Mail } from 'lucide-react'
+import { toast } from 'react-toastify'
 
 export const Login = () => {
   const navigate = useNavigate()
   const { login } = useAuth()
-  const [error, setError] = useState<string>('')
-  const [loading, setLoading] = useState(false)
 
   const methods = useForm<LoginInput>({
     resolver: zodResolver(loginSchema) as any,
-    defaultValues: { email: '', password: '', remember: true },
+    defaultValues: { email: '', password: '' },
     mode: 'onChange',
   })
-
+  const {
+    handleSubmit,
+    control,
+    formState: { isSubmitting },
+  } = methods
   const onSubmit = async (values: LoginInput) => {
-    setLoading(true)
-    setError('')
-    const { error } = await login(values.email, values.password, values.remember)
-    setLoading(false)
+    const { error } = await login(values.email, values.password)
     if (error) {
-      setError(error)
+      toast.error(error)
       return
     }
     navigate('/')
@@ -35,59 +44,82 @@ export const Login = () => {
 
   return (
     <AuthLayout>
-      <Form {...methods}>
-        <form className="grid gap-4" onSubmit={methods.handleSubmit(onSubmit)}>
-          <h1 className="text-2xl font-semibold">Login</h1>
-          {error && <div className="text-destructive text-sm">{error}</div>}
-          <FormField
-            control={methods.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="you@example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={methods.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={methods.control}
-            name="remember"
-            render={({ field }) => (
-              <FormItem>
-                <div className="flex items-center gap-2">
-                  <input id="remember" type="checkbox" checked={!!field.value} onChange={(e) => field.onChange(e.target.checked)} />
-                  <FormLabel htmlFor="remember">Remember me</FormLabel>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign In'}
-          </Button>
-          <div className="flex justify-between text-sm">
-            <Link to="/forgot-password" className="text-primary">Forgot Password?</Link>
-            <Link to="/signup" className="text-primary">Sign Up</Link>
-          </div>
-        </form>
-      </Form>
+      <Card className="mx-auto max-w-md w-full">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl">Welcome back!</CardTitle>
+          <CardDescription>Sign in to your account to continue</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...methods}>
+            <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+              <FormField
+                control={control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Input
+                          type="email"
+                          placeholder="you@example.com"
+                          className="pl-10"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          className="pl-10"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'Signing in…' : 'Sign In'}
+              </Button>
+              <div className="text-center text-sm text-muted-foreground">
+                By clicking continue, you agree to our{' '}
+                <Link to="/terms" className="underline underline-offset-4 hover:text-primary">
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link to="/privacy" className="underline underline-offset-4 hover:text-primary">
+                  Privacy Policy
+                </Link>
+                .
+              </div>
+              <div className="flex justify-between text-sm">
+                <Link to="/forgot-password" className="text-primary hover:underline">
+                  Forgot Password?
+                </Link>
+                <Link to="/signup" className="text-primary hover:underline">
+                  Don't have an account? Sign Up
+                </Link>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </AuthLayout>
   )
 }
-

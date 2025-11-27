@@ -1,19 +1,29 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Mail } from 'lucide-react'
 import { AuthLayout } from '@/components/layouts/AuthLayout'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Button,
+} from '@/components/ui'
 import { forgotPasswordSchema, type ForgotPasswordInput } from '@/schemas'
 import { useAuth } from '@/features/auth'
+import { toast } from 'react-toastify'
 
 export const ResendVerification = () => {
   const { resendVerification } = useAuth()
-  const [error, setError] = useState<string>('')
-  const [success, setSuccess] = useState<string>('')
-  const [loading, setLoading] = useState(false)
 
   const methods = useForm<ForgotPasswordInput>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -22,48 +32,77 @@ export const ResendVerification = () => {
   })
 
   const onSubmit = async (values: ForgotPasswordInput) => {
-    setLoading(true)
-    setError('')
-    setSuccess('')
     const { error } = await resendVerification(values.email)
-    setLoading(false)
     if (error) {
-      setError(error)
+      toast.error(error)
       return
     }
-    setSuccess('Verification email resent. Please check your inbox.')
+    toast.success('Verification email resent. Please check your inbox.')
   }
+
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = methods
 
   return (
     <AuthLayout>
-      <Form {...methods}>
-        <form className="grid gap-4" onSubmit={methods.handleSubmit(onSubmit)}>
-          <h1 className="text-2xl font-semibold">Resend Verification</h1>
-          {error && <div className="text-destructive text-sm">{error}</div>}
-          {success && <div className="text-green-600 text-sm">{success}</div>}
-          <FormField
-            control={methods.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="you@example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Resending…' : 'Resend Email'}
-          </Button>
-          <div className="flex justify-between text-sm">
-            <Link to="/login" className="text-primary">Back to Login</Link>
-            <Link to="/signup" className="text-primary">Create Account</Link>
-          </div>
-        </form>
-      </Form>
+      <Card className="mx-auto max-w-md w-full">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl">Resend verification email</CardTitle>
+          <CardDescription>
+            Enter your email address and we'll send you a new verification link.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...methods}>
+            <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+              <FormField
+                control={control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Input
+                          type="email"
+                          placeholder="you@example.com"
+                          className="pl-10"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'Resending…' : 'Resend Email'}
+              </Button>
+              <div className="text-center text-sm">
+                <Link
+                  to="/login"
+                  className="text-primary underline underline-offset-4 hover:text-primary/80"
+                >
+                  Back to Login
+                </Link>
+              </div>
+              <div className="text-center text-sm text-muted-foreground">
+                Don't have an account?{' '}
+                <Link
+                  to="/signup"
+                  className="text-primary underline underline-offset-4 hover:text-primary/80"
+                >
+                  Create Account
+                </Link>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </AuthLayout>
   )
 }
-
