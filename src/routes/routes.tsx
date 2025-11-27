@@ -4,13 +4,16 @@ import { AppLayout } from '@/components/layouts'
 import { Protected } from '@/features/auth'
 import { TestsPage } from '@/features/tests'
 import { Quran } from '@/features/quran'
+import { Login, Signup, ForgotPassword, ResendVerification, Profile } from '@/features/auth/pages'
 
 export const routes: RouteObject[] = [
   {
     path: '/',
     element: (
       <AppLayout>
-        <Home />
+        <Protected>
+          <Home />
+        </Protected>
       </AppLayout>
     ),
   },
@@ -18,7 +21,9 @@ export const routes: RouteObject[] = [
     path: '/quran',
     element: (
       <AppLayout>
-        <Quran />
+        <Protected>
+          <Quran />
+        </Protected>
       </AppLayout>
     ),
   },
@@ -36,8 +41,30 @@ export const routes: RouteObject[] = [
     path: '/tests',
     element: (
       <AppLayout>
-        <TestsPage />
+        <Protected>
+          <TestsPage />
+        </Protected>
       </AppLayout>
     ),
+  },
+  {
+    path: '/login',
+    element: <Login />,
+  },
+  {
+    path: '/signup',
+    element: <Signup />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPassword />,
+  },
+  {
+    path: '/verify-email',
+    element: <ResendVerification />,
+  },
+  {
+    path: '/profile',
+    element: <Profile />,
   },
 ]

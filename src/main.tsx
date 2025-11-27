@@ -6,6 +6,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { routes } from '@/routes'
 import { ReduxProvider } from '@/redux'
 import { ReactQueryProvider } from '@/query'
+import { AuthProvider } from '@/features/auth'
 import { Loader } from '@/components/system'
 import { ToastContainer } from 'react-toastify'
 
@@ -16,8 +17,10 @@ createRoot(document.getElementById('root')!).render(
     <ReduxProvider>
       <ReactQueryProvider>
         <Suspense fallback={<Loader />}>
-          <RouterProvider router={router} />
-          <ToastContainer />
+          <AuthProvider>
+            <RouterProvider router={router} />
+            <ToastContainer />
+          </AuthProvider>
         </Suspense>
       </ReactQueryProvider>
     </ReduxProvider>

@@ -3,7 +3,8 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth'
 
 export const Protected = ({ children }: PropsWithChildren) => {
-  const { isAuthenticated } = useAuth()
-  if (!isAuthenticated) return <Navigate to="/about" replace />
+  const { isAuthenticated, loading } = useAuth()
+  if (loading) return null
+  if (!isAuthenticated) return <Navigate to="/login" replace />
   return children as any
 }
