@@ -62,7 +62,9 @@ export const useTasbeehCounter = (options?: UseTasbeehOptions) => {
     if (audioCtxRef.current) return
     try {
       audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
-    } catch {}
+    } catch {
+      // AudioContext not supported, silently fail
+    }
   }, [soundEnabled])
 
   const playSound = useCallback(() => {
@@ -104,16 +106,16 @@ export const useTasbeehCounter = (options?: UseTasbeehOptions) => {
       vibrate()
       return next
     })
-  }, [initAudio, safeTarget, playSound, vibrate])
+  }, [initAudio, safeTarget, playSound, vibrate, setCount, setRounds])
 
   const decrement = useCallback(() => {
     setCount((c) => Math.max((typeof c === 'number' ? c : 0) - 1, 0))
-  }, [])
+  }, [setCount])
 
   const reset = useCallback(() => {
     setCount(0)
     setRounds(0)
-  }, [])
+  }, [setCount, setRounds])
 
   const selectPreset = useCallback(
     (id: string) => {
@@ -122,13 +124,13 @@ export const useTasbeehCounter = (options?: UseTasbeehOptions) => {
     [setPresetId],
   )
 
-  const toggleSound = useCallback(() => setSoundEnabled((v) => !v), [])
-  const toggleVibrate = useCallback(() => setVibrateEnabled((v) => !v), [])
+  const toggleSound = useCallback(() => setSoundEnabled((v) => !v), [setSoundEnabled])
+  const toggleVibrate = useCallback(() => setVibrateEnabled((v) => !v), [setVibrateEnabled])
 
   useEffect(() => {
     setCount(0)
     setTarget(preset.defaultTarget)
-  }, [presetId])
+  }, [presetId, preset.defaultTarget, setCount, setTarget])
 
   const value = useMemo(
     () => ({

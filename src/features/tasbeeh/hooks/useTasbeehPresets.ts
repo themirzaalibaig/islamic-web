@@ -30,9 +30,13 @@ export const useTasbeehPresets = () => {
     setLoading(false)
   }, [session])
 
+  // Load presets when session changes
   useEffect(() => {
-    load()
-  }, [load])
+    if (session?.user?.id) {
+      void load()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id])
 
   const create = useCallback(
     async (name: string, text: string, defaultTarget: number) => {

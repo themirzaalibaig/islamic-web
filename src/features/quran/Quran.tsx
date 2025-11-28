@@ -60,7 +60,8 @@ export const Quran = () => {
   } = useQuranAudio()
 
   useEffect(() => {
-    loadSurahAudio(defaultChapterId, surahs)
+    void loadSurahAudio(defaultChapterId, surahs)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const recitersList: Array<{ id: string; name: string }> = [
@@ -196,7 +197,11 @@ export const Quran = () => {
               onClick={() => {
                 const el = currentAudio.audioElement
                 if (el) {
-                  el.paused ? el.play() : el.pause()
+                  if (el.paused) {
+                    void el.play()
+                  } else {
+                    el.pause()
+                  }
                 }
               }}
               className="p-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90"
@@ -248,7 +253,7 @@ export const Quran = () => {
             </DropdownMenu>
             <a
               href={
-                currentAudio.type === 'surah' ? (audioUrl ?? '') : verseAudioRef.current?.src || ''
+                currentAudio.type === 'surah' ? (audioUrl ?? '') : (currentAudio.audioElement?.src || '')
               }
               target="_blank"
               rel="noopener noreferrer"

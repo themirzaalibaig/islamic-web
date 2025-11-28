@@ -33,12 +33,12 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       setSession(data.session ?? null)
       setLoading(false)
     }
-    init()
+    void init()
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s ?? null)
     })
     return () => sub.subscription.unsubscribe()
-  }, [])
+  }, [setSession])
 
   const login = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -94,6 +94,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextValue>({
   session: null,
   isAuthenticated: false,

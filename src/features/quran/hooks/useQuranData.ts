@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 export type Surah = {
   id: number
@@ -24,9 +24,6 @@ export type Verse = {
 const API_BASE = 'https://api.quran.com/api/v4'
 
 export function useQuranData(defaultChapterId?: number) {
-  const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null)
-  const [verses, setVerses] = useState<Verse[]>([])
-  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   const {
@@ -43,7 +40,14 @@ export function useQuranData(defaultChapterId?: number) {
     },
   })
 
-  const surahs = data?.chapters || []
+  const surahs = useMemo(() => data?.chapters || [], [data?.chapters])
+
+  // Derive selected surah from surahs and defaultChapterId
+  const selectedSurah = useMemo(() => {
+    if (surahs.length === 0) return null
+    const chapterId = defaultChapterId || 1
+    return surahs.find((s) => s.id === chapterId) || null
+  }, [surahs, defaultChapterId])
 
   const {
     data: versesData,
@@ -61,31 +65,28 @@ export function useQuranData(defaultChapterId?: number) {
     enabled: !!selectedSurah,
   })
 
-  useEffect(() => {
-    if (surahs.length === 0) return
-    const chapterId = defaultChapterId || 1
-    const surah = surahs.find((s) => s.id === chapterId) || null
-    setSelectedSurah(surah)
-  }, [surahs, defaultChapterId])
+  // Derive verses from versesData
+  const verses = useMemo(() => versesData?.verses || [], [versesData?.verses])
 
-  useEffect(() => {
-    if (versesData?.verses) {
-      setVerses(versesData.verses)
-    }
-  }, [versesData])
-
-  useEffect(() => {
+  // Derive error from query errors
+  const error = useMemo(() => {
     if (surahsError || versesError) {
-      setError('Failed to load data. Please try again later.')
-    } else {
-      setError(null)
+      return 'Failed to load data. Please try again later.'
     }
+    return null
   }, [surahsError, versesError])
 
-  const fetchVerses = (chapterId: number) => {
+  const [selectedSurahState, setSelectedSurahState] = useState<Surah | null>(selectedSurah)
+
+  // Sync selectedSurahState with derived selectedSurah only when it changes
+  useEffect(() => {
+    setSelectedSurahState(selectedSurah)
+  }, [selectedSurah])
+
+  const fetchVerses = useCallback((chapterId: number) => {
     const surah = surahs.find((s) => s.id === chapterId) || null
-    setSelectedSurah(surah)
-  }
+    setSelectedSurahState(surah)
+  }, [surahs])
 
   const filteredSurahs = useMemo(
     () =>
@@ -99,7 +100,7 @@ export function useQuranData(defaultChapterId?: number) {
 
   return {
     surahs,
-    selectedSurah,
+    selectedSurah: selectedSurahState,
     verses,
     loading: surahsLoading || versesLoading,
     error,

@@ -57,7 +57,11 @@ export const BottomPlayer = ({
             onClick={() => {
               const el = currentAudio.audioElement
               if (el) {
-                el.paused ? el.play() : el.pause()
+                if (el.paused) {
+                  void el.play()
+                } else {
+                  el.pause()
+                }
               }
             }}
             className="p-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90"

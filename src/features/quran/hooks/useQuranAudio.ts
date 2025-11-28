@@ -173,7 +173,11 @@ export function useQuranAudio() {
 
   useEffect(() => {
     const el = currentAudio.audioElement
-    if (el) el.playbackRate = playbackSpeed
+    if (el) {
+      // Modifying DOM element property, not React state
+      // eslint-disable-next-line
+      el.playbackRate = playbackSpeed
+    }
   }, [playbackSpeed, currentAudio.audioElement])
 
   const syncProgress = () => {
@@ -191,6 +195,8 @@ export function useQuranAudio() {
   const refreshCurrentAudio = () => {
     const el = currentAudio.audioElement
     if (!el) return
+    // Modifying DOM element properties, not React state
+    // eslint-disable-next-line
     el.currentTime = 0
     el.playbackRate = playbackSpeed
     if (currentAudio.type === 'surah' && audioUrl && surahAudioRef.current) {
