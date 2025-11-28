@@ -34,6 +34,7 @@ export const useApi = <TData = any, E = any, V = any>(
   defaultUrl: string,
   options?: UseApiOptions<TData, E, V>,
 ): UseApiReturn<TData, E, V> => {
+  const {axiosConfig}=options||{}
   const queryClient = useQueryClient()
   const [authEnabled, setAuthEnabled] = useState(options?.auth ?? true)
 
@@ -51,6 +52,7 @@ export const useApi = <TData = any, E = any, V = any>(
         data,
         params,
         signal,
+        ...axiosConfig,
         ...config,
       }
       if (!authEnabled) {
@@ -59,7 +61,7 @@ export const useApi = <TData = any, E = any, V = any>(
       }
       return api.request<R>(cfg)
     },
-    [defaultUrl, authEnabled],
+    [defaultUrl, authEnabled,axiosConfig],
   )
 
   const keyStr = JSON.stringify(queryKey)
