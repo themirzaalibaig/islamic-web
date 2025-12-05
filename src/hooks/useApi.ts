@@ -5,10 +5,12 @@ import {
   useMutation,
   useQueryClient,
   useQueries,
+  type UseInfiniteQueryOptions,
+  type InfiniteData,
+  type QueryKey,
 } from '@tanstack/react-query'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import { useCallback, useState } from 'react'
-import type { UseInfiniteQueryOptions, InfiniteData } from '@tanstack/react-query'
 import type {
   ApiRequest,
   ParallelRequest,
@@ -17,12 +19,15 @@ import type {
   UseApiOptions,
   ResponseMeta,
   ValidationError,
+  PerRequestConfig,
+  HttpMethod,
 } from '../types'
 import { api } from '@/lib/axios'
 import { useDebounce, useThrottle } from '@reactuses/core'
 import { toast } from 'react-toastify'
 import { get, set, cloneDeep } from 'lodash'
 
+// Global maps for debounce/throttle to share state across components
 const debounceTimers = new Map<
   string,
   { timer: any; resolvers: Array<(v: any) => void>; rejecters: Array<(e: any) => void> }
@@ -30,7 +35,7 @@ const debounceTimers = new Map<
 const throttleMap = new Map<string, number>()
 
 export const useApi = <TData = any, E = any, V = any>(
-  queryKey: any[],
+  queryKey: QueryKey,
   defaultUrl: string,
   options?: UseApiOptions<TData, E, V>,
 ): UseApiReturn<TData, E, V> => {
@@ -38,7 +43,7 @@ export const useApi = <TData = any, E = any, V = any>(
   const [authEnabled, setAuthEnabled] = useState(options?.auth ?? true)
 
   const makeKey = useCallback(
-    (url: string, params?: any) => [url, params ? JSON.stringify(params) : undefined],
+    (url: string, params?: any): QueryKey => [url, params ? JSON.stringify(params) : undefined],
     [],
   )
 
@@ -53,27 +58,45 @@ export const useApi = <TData = any, E = any, V = any>(
         signal,
         ...config,
       }
+
+      // Handle Auth
       if (!authEnabled) {
         if (!cfg.headers) cfg.headers = {}
         delete cfg.headers['Authorization']
       }
-      return api.request<R>(cfg)
+
+      return api.request<R>(cfg).then((res) => {
+        if (!options?.silent && method !== 'get') {
+          const msg = (res?.data && (res.data as any).message) || 'Success'
+          toast.success(String(msg))
+        }
+
+        if (config?.queryKey) {
+          queryClient.invalidateQueries({ queryKey: config.queryKey })
+        }
+        return res
+      })
     },
-    [defaultUrl, authEnabled],
+    [defaultUrl, authEnabled, options?.silent, queryClient],
   )
 
+  // --- Query Logic ---
   const keyStr = JSON.stringify(queryKey)
   const debouncedKeyStr = useDebounce(keyStr, options?.debounceMs || 0)
   const throttledKeyStr = useThrottle(debouncedKeyStr, options?.throttleMs || 0)
   const effectiveQueryKey = JSON.parse(throttledKeyStr)
 
   const { refetchInterval: _polling, ...restQueryConfig } = (options?.queryConfig || {}) as any
+
   const query = useQuery<TData, E, TData>({
     queryKey: effectiveQueryKey,
     queryFn: ({ signal }) => {
       const run = () =>
         request<TData>({ url: defaultUrl, method: 'get' }, signal).then((res) => res.data as TData)
+
       const k = JSON.stringify(queryKey)
+
+      // Handle Throttle
       if (options?.throttleMs && options.throttleMs > 0) {
         const last = throttleMap.get(k) || 0
         const now = Date.now()
@@ -85,6 +108,8 @@ export const useApi = <TData = any, E = any, V = any>(
         }
         throttleMap.set(k, now)
       }
+
+      // Handle Debounce
       if (options?.debounceMs && options.debounceMs > 0) {
         const entry = debounceTimers.get(k)
         return new Promise<TData>((resolve, reject) => {
@@ -130,6 +155,7 @@ export const useApi = <TData = any, E = any, V = any>(
     ...restQueryConfig,
   })
 
+  // --- Mutation Logic ---
   const mutation = useMutation<TData, E, V>({
     mutationFn: (variables) => {
       return request<TData>({
@@ -143,22 +169,29 @@ export const useApi = <TData = any, E = any, V = any>(
       if (options?.optimisticUpdate || auto) {
         await queryClient.cancelQueries({ queryKey })
         const previous = queryClient.getQueryData<TData>(queryKey)
+
         if (options?.optimisticUpdate) {
           queryClient.setQueryData(queryKey, options.optimisticUpdate(previous, variables))
           return { previous }
         }
+
+        // Auto Optimistic Logic
         const updated = (() => {
           if (!previous) return previous as TData
           const method = options?.method || 'post'
           const idGetter = options?.getId || ((x: any) => x?.id)
           const path = options?.collectionPath
           const draft = cloneDeep(previous as any)
+
+          // Find the target array
           const target = path
             ? get(draft, path)
             : Array.isArray(draft)
               ? draft
               : Object.values(draft).find((v) => Array.isArray(v))
+
           if (!target) return previous as TData
+
           if (method === 'post') {
             const item = (variables as any) ?? {}
             if (Array.isArray(target)) (target as any[]).push(item)
@@ -176,9 +209,11 @@ export const useApi = <TData = any, E = any, V = any>(
               if (idx >= 0) (target as any[]).splice(idx, 1)
             }
           }
+
           if (path) set(draft, path, target)
           return draft as TData
         })()
+
         queryClient.setQueryData(queryKey, updated)
         return { previous }
       }
@@ -191,12 +226,39 @@ export const useApi = <TData = any, E = any, V = any>(
       }
       options?.onSuccess?.(data)
     },
-    onError: (_, __, context: any) => {
+    onError: (err, variables, context: any) => {
       if (context?.previous) {
         queryClient.setQueryData(queryKey, context.previous as TData)
       }
       if (!options?.silent) {
-        const err: any = __ as any
+        const r = (err as any)?.response?.data
+        const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
+        if (!hasValidation) {
+          const msg = (r && r.message) || (err as any)?.message || 'Error'
+          toast.error(String(msg))
+        }
+      }
+      if (options?.onError) options.onError(err as E)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+    },
+  })
+
+  // --- Helpers ---
+  const invalidate = (keys: QueryKey = queryKey) => queryClient.invalidateQueries({ queryKey: keys })
+
+  const handleMutationRequest = async <TResponse = TData>(
+    method: HttpMethod,
+    config?: AxiosRequestConfig & PerRequestConfig,
+    data?: any
+  ): Promise<AxiosResponse<TResponse>> => {
+    const silent = config?.silent ?? options?.silent
+    try {
+      const res = await request<TResponse>({ method, url: defaultUrl, data, config })
+      return res
+    } catch (err: any) {
+      if (!silent) {
         const r = err?.response?.data
         const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
         if (!hasValidation) {
@@ -204,12 +266,9 @@ export const useApi = <TData = any, E = any, V = any>(
           toast.error(String(msg))
         }
       }
-      if (options?.onError) options.onError(__ as any)
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey })
-    },
-  })
+      throw err
+    }
+  }
 
   const useParallelApi = <P = any>(requests: ParallelRequest<P>[]) => {
     return useQueries({
@@ -232,17 +291,21 @@ export const useApi = <TData = any, E = any, V = any>(
     return Promise.all(requests.map((req) => request(req)))
   }
 
-  const uploadFile = async (file: File | File[], config?: AxiosRequestConfig) => {
+  const uploadFile = async (file: File | File[], config?: AxiosRequestConfig & PerRequestConfig) => {
     const files = Array.isArray(file) ? file : [file]
     const formData = new FormData()
     files.forEach((f) => formData.append('files', f))
-    return api.post(defaultUrl, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      ...config,
+    return request({
+      method: 'post',
+      url: defaultUrl,
+      data: formData,
+      config: {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        ...config,
+      },
     })
   }
 
-  const invalidate = (keys = queryKey) => queryClient.invalidateQueries({ queryKey: keys })
   const refetch = () => queryClient.refetchQueries({ queryKey })
   const setData = (updater: (old: TData | undefined) => TData) =>
     queryClient.setQueryData(queryKey, updater)
@@ -263,6 +326,7 @@ export const useApi = <TData = any, E = any, V = any>(
       initialPageParam: _i,
       ...restOptions
     } = (infiniteOptions || {}) as any
+
     const infiniteQuery = useInfiniteQuery<
       TInfiniteQueryData,
       TInfiniteError,
@@ -285,6 +349,7 @@ export const useApi = <TData = any, E = any, V = any>(
       staleTime: 1000 * 60 * 5,
       ...restOptions,
     })
+
     return {
       data: infiniteQuery.data,
       fetchNextPage: infiniteQuery.fetchNextPage,
@@ -330,87 +395,22 @@ export const useApi = <TData = any, E = any, V = any>(
     isMutating: mutation.isPending,
     mutate: mutation.mutate,
     mutateAsync: mutation.mutateAsync,
-    get: (config?: AxiosRequestConfig) => request({ method: 'get', url: defaultUrl, config }),
-    post: (data?: V, config?: AxiosRequestConfig) =>
-      request<TData>({ method: 'post', url: defaultUrl, data, config })
-        .then((res) => {
-          if (!options?.silent) {
-            const msg = (res?.data && (res.data as any).message) || 'Success'
-            toast.success(String(msg))
-          }
-          return res as AxiosResponse<TData>
-        })
-        .catch((err: any) => {
-          if (!options?.silent) {
-            const r = err?.response?.data
-            const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
-            if (!hasValidation) {
-              const msg = (r && r.message) || err?.message || 'Error'
-              toast.error(String(msg))
-            }
-          }
-          throw err
-        }),
-    put: (data?: V, config?: AxiosRequestConfig) =>
-      request<TData>({ method: 'put', url: defaultUrl, data, config })
-        .then((res) => {
-          if (!options?.silent) {
-            const msg = (res?.data && (res.data as any).message) || 'Success'
-            toast.success(String(msg))
-          }
-          return res as AxiosResponse<TData>
-        })
-        .catch((err: any) => {
-          if (!options?.silent) {
-            const r = err?.response?.data
-            const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
-            if (!hasValidation) {
-              const msg = (r && r.message) || err?.message || 'Error'
-              toast.error(String(msg))
-            }
-          }
-          throw err
-        }),
-    patch: (data?: V, config?: AxiosRequestConfig) =>
-      request<TData>({ method: 'patch', url: defaultUrl, data, config })
-        .then((res) => {
-          if (!options?.silent) {
-            const msg = (res?.data && (res.data as any).message) || 'Success'
-            toast.success(String(msg))
-          }
-          return res as AxiosResponse<TData>
-        })
-        .catch((err: any) => {
-          if (!options?.silent) {
-            const r = err?.response?.data
-            const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
-            if (!hasValidation) {
-              const msg = (r && r.message) || err?.message || 'Error'
-              toast.error(String(msg))
-            }
-          }
-          throw err
-        }),
-    del: (config?: AxiosRequestConfig) =>
-      request<TData>({ method: 'delete', url: defaultUrl, config })
-        .then((res) => {
-          if (!options?.silent) {
-            const msg = (res?.data && (res.data as any).message) || 'Success'
-            toast.success(String(msg))
-          }
-          return res as AxiosResponse<TData>
-        })
-        .catch((err: any) => {
-          if (!options?.silent) {
-            const r = err?.response?.data
-            const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
-            if (!hasValidation) {
-              const msg = (r && r.message) || err?.message || 'Error'
-              toast.error(String(msg))
-            }
-          }
-          throw err
-        }),
+
+    get: <TResponse = TData>(config?: AxiosRequestConfig & PerRequestConfig) =>
+      request<TResponse>({ method: 'get', url: defaultUrl, config }),
+
+    post: <TResponse = TData, TBody = V>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) =>
+      handleMutationRequest<TResponse>('post', config, data),
+
+    put: <TResponse = TData, TBody = V>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) =>
+      handleMutationRequest<TResponse>('put', config, data),
+
+    patch: <TResponse = TData, TBody = V>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) =>
+      handleMutationRequest<TResponse>('patch', config, data),
+
+    del: <TResponse = TData>(config?: AxiosRequestConfig & PerRequestConfig) =>
+      handleMutationRequest<TResponse>('delete', config),
+
     request,
     uploadFile,
     parallel: useParallelApi,
