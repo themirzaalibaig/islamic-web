@@ -1,7 +1,10 @@
-import type { UseQueryOptions, UseInfiniteQueryOptions, InfiniteData } from '@tanstack/react-query'
+import type { UseQueryOptions, UseInfiniteQueryOptions, InfiniteData, QueryKey } from '@tanstack/react-query'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { ToastOptions } from 'react-toastify'
 
+/**
+ * Standard API Response structure
+ */
 export interface ApiResponse<T> {
   success: boolean
   message: string
@@ -11,18 +14,28 @@ export interface ApiResponse<T> {
   timestamp: string
 }
 
+/**
+ * Validation error structure for form fields
+ */
 export interface ValidationError {
   field: string
   message: string
   code?: string | undefined
   value?: unknown
 }
+
+/**
+ * Metadata for pagination and other response info
+ */
 export interface ResponseMeta {
   pagination?: PaginationMeta
   version?: string
   [key: string]: any
 }
 
+/**
+ * Pagination metadata
+ */
 export interface PaginationMeta {
   currentPage: number
   totalPages: number
@@ -33,25 +46,46 @@ export interface PaginationMeta {
   nextPage?: number | null
   prevPage?: number | null
 }
+
 export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete'
 
+/**
+ * Options for the useApi hook
+ */
 export interface UseApiOptions<TData = any, TError = any, TVariables = any> {
+  /** Enable/disable the query */
   enabled?: boolean
+  /** Require authentication for this request */
   auth?: boolean
+  /** HTTP method for the initial query (defaults to GET) */
   method?: HttpMethod
+  /** Custom headers */
   headers?: Record<string, string>
+  /** Toast notification options */
   toastOptions?: ToastOptions
+  /** Axios config override */
   axiosConfig?: AxiosRequestConfig
+  /** TanStack Query options */
   queryConfig?: Partial<UseQueryOptions<TData, TError, TData>>
+  /** Debounce time in ms for the query */
   debounceMs?: number
+  /** Throttle time in ms for the query */
   throttleMs?: number
+  /** Optimistic update function for mutations */
   optimisticUpdate?: (oldData: TData | undefined, variables: TVariables) => TData
+  /** Automatically attempt optimistic updates for collections */
   autoOptimistic?: boolean
+  /** Path to the collection in the response data for auto-optimistic updates */
   collectionPath?: string
+  /** Function to get ID from an item for auto-optimistic updates */
   getId?: (item: any) => any
+  /** Suppress success/error toasts */
   silent?: boolean
+  /** Callback on success */
   onSuccess?: (data: TData) => void
+  /** Callback on error */
   onError?: (error: TError) => void
+  /** Enable automatic token refresh (if supported) */
   enableTokenRefresh?: boolean
   refreshUrl?: string
   refreshMethod?: HttpMethod
@@ -59,18 +93,21 @@ export interface UseApiOptions<TData = any, TError = any, TVariables = any> {
   extractTokens?: (response: any) => { accessToken?: string; refreshToken?: string }
 }
 
+/**
+ * Configuration for a single API request
+ */
 export interface ApiRequest {
   url: string
   method?: HttpMethod
   data?: any
   params?: any
-  config?: AxiosRequestConfig
+  config?: AxiosRequestConfig & PerRequestConfig
 }
 
 export interface ParallelRequest<T = any> {
-  key: string | any[]
+  key: QueryKey
   request: ApiRequest
-  options?: UseQueryOptions<T>
+  options?: Omit<UseQueryOptions<T>, 'queryKey' | 'queryFn'>
 }
 
 export interface InfiniteApiRequest {
@@ -78,6 +115,14 @@ export interface InfiniteApiRequest {
   initialPageParam?: any
 }
 
+export interface PerRequestConfig {
+  silent?: boolean
+  queryKey?: QueryKey
+}
+
+/**
+ * Return value of the useApi hook
+ */
 export interface UseApiReturn<TData = any, TError = any, TVariables = any> {
   data: TData | undefined
   response: AxiosResponse<TData> | undefined
@@ -91,13 +136,17 @@ export interface UseApiReturn<TData = any, TError = any, TVariables = any> {
   error: TError | null
   status: 'idle' | 'loading' | 'error' | 'success'
   isMutating: boolean
-  get: (config?: AxiosRequestConfig) => Promise<AxiosResponse<TData>>
-  post: (data?: TVariables, config?: AxiosRequestConfig) => Promise<AxiosResponse<TData>>
-  put: (data?: TVariables, config?: AxiosRequestConfig) => Promise<AxiosResponse<TData>>
-  patch: (data?: TVariables, config?: AxiosRequestConfig) => Promise<AxiosResponse<TData>>
-  del: (config?: AxiosRequestConfig) => Promise<AxiosResponse<TData>>
-  request: <R = TData>(req: ApiRequest) => Promise<AxiosResponse<R>>
-  uploadFile: (file: File | File[], config?: AxiosRequestConfig) => Promise<AxiosResponse<TData>>
+
+  // CRUD methods
+  get: <TResponse = TData>(config?: AxiosRequestConfig & PerRequestConfig) => Promise<AxiosResponse<TResponse>>
+  post: <TResponse = TData, TBody = TVariables>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) => Promise<AxiosResponse<TResponse>>
+  put: <TResponse = TData, TBody = TVariables>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) => Promise<AxiosResponse<TResponse>>
+  patch: <TResponse = TData, TBody = TVariables>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) => Promise<AxiosResponse<TResponse>>
+  del: <TResponse = TData>(config?: AxiosRequestConfig & PerRequestConfig) => Promise<AxiosResponse<TResponse>>
+
+  request: <R = TData>(req: ApiRequest & PerRequestConfig) => Promise<AxiosResponse<R>>
+  uploadFile: <TResponse = TData>(file: File | File[], config?: AxiosRequestConfig & PerRequestConfig) => Promise<AxiosResponse<TResponse>>
+
   parallel: <T = any>(
     requests: ParallelRequest<T>[],
   ) => Array<{
@@ -105,16 +154,18 @@ export interface UseApiReturn<TData = any, TError = any, TVariables = any> {
     isLoading: boolean
     isError: boolean
     error: any
-    key: string | any[]
+    key: QueryKey
   }>
+
   batch: (requests: ApiRequest[]) => Promise<AxiosResponse<any>[]>
-  invalidate: (keys?: any[]) => Promise<void>
+  invalidate: (keys?: QueryKey) => Promise<void>
   refetch: () => Promise<void>
   setData: (updater: (old: TData | undefined) => TData) => void
   remove: () => void
   cancel: () => void
   setAuth: (enabled: boolean, token?: string) => void
-  makeKey: (url: string, params?: any) => any[]
+  makeKey: (url: string, params?: any) => QueryKey
+
   useInfiniteApi: <TInfiniteData = any, TInfiniteError = any>(
     infiniteOptions?: InfiniteApiRequest &
       UseInfiniteQueryOptions<TInfiniteData, TInfiniteError, InfiniteData<TInfiniteData>>,
@@ -127,6 +178,7 @@ export interface UseApiReturn<TData = any, TError = any, TVariables = any> {
     error: TInfiniteError | null
     refetch: () => void
   }
+
   mutate: (variables: TVariables, options?: any) => void
   mutateAsync: (variables: TVariables) => Promise<TData>
 }
@@ -141,3 +193,4 @@ export interface ApiClientConfig {
   refreshTokenKey?: string
   authorizationHeader?: string
 }
+

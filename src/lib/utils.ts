@@ -4,16 +4,14 @@ import type { ValidationError } from '@/types'
 import type { ZodObject } from 'zod'
 import { toast } from 'react-toastify'
 import { twMerge } from 'tailwind-merge'
+import axios from 'axios'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 export const handleValidationErrors = (
-  response: {
-    message: string
-    errors?: ValidationError[] | null
-  },
+  error:any,
   setError: UseFormSetError<any>,
   options?: {
     fields?: string[]
@@ -40,9 +38,12 @@ export const handleValidationErrors = (
    * }
    */
 
-  const items: ValidationError[] = Array.isArray(response.errors) ? response.errors : []
+  console.log(error);
+  const isAxiosError=axios.isAxiosError(error)
+  const data = isAxiosError ? error.response?.data : error;
+  const items: ValidationError[] = Array.isArray(data?.errors) ? data.errors : []
   if (items.length === 0) {
-    if (!options?.silent) toast.error(response.message)
+    if (!options?.silent) toast.error(data.message)
     return
   }
   const derivedFields =
@@ -63,5 +64,5 @@ export const handleValidationErrors = (
       mismatched = true
     }
   })
-  if (mismatched && !options?.silent) toast.error(response.message)
+  if (mismatched && !options?.silent) toast.error(data.message)
 }

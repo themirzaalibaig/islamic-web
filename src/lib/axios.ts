@@ -1,3 +1,4 @@
+import { ENV } from '@/config'
 import axios from 'axios'
 import type { AxiosInstance } from 'axios'
 
@@ -31,10 +32,7 @@ export const configureApiClient = (cfg: Partial<ApiClientConfig>) => {
 }
 
 export const api: AxiosInstance = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_BASE_URL ??
-    import.meta.env.VITE_API_URL ??
-    'https://jsonplaceholder.typicode.com',
+  baseURL: ENV.API_URL,
   withCredentials: true,
   timeout: 15000,
 })
