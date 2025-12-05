@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AuthLayout } from '@/components/layouts/AuthLayout'
@@ -17,16 +17,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui'
-import { loginSchema, type LoginInput } from '@/schemas'
-import { useAuth } from '@/features/auth'
+import { loginSchema, useAuth, type LoginSchema } from '@/features/auth'
 import { Lock, Mail } from 'lucide-react'
-import { toast } from 'react-toastify'
 
 export const Login = () => {
-  const navigate = useNavigate()
   const { login } = useAuth()
 
-  const methods = useForm<LoginInput>({
+
+  const methods = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema) as any,
     defaultValues: { email: '', password: '' },
     mode: 'onChange',
@@ -35,14 +33,10 @@ export const Login = () => {
     handleSubmit,
     control,
     formState: { isSubmitting },
+    setError
   } = methods
-  const onSubmit = async (values: LoginInput) => {
-    const { error } = await login(values.email, values.password)
-    if (error) {
-      toast.error(error)
-      return
-    }
-    navigate('/')
+  const onSubmit = async (values: LoginSchema) => {
+    await login(values, setError)
   }
 
   return (
