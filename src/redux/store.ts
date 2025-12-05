@@ -1,18 +1,19 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit'
 import { persistReducer, persistStore } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
-import counterReducer from './slice/counter.slice'
+import { counterReducer, authReducer } from './'
 import { useDispatch, useSelector } from 'react-redux'
 import type { TypedUseSelectorHook } from 'react-redux'
 
 const rootReducer = combineReducers({
   counter: counterReducer,
+  auth: authReducer,
 })
 
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['counter'],
+  whitelist: ['counter', 'auth'],
 }
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)
