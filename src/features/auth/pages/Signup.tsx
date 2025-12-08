@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link} from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AuthLayout } from '@/components/layouts/AuthLayout'
@@ -12,18 +12,15 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { signupSchema, type SignupInput } from '@/schemas'
-import { useAuth } from '@/features/auth'
+import { signupSchema, useAuth, type SignupSchema } from '@/features/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
 import { Lock, Mail, User } from 'lucide-react'
-import { toast } from 'react-toastify'
 
 export const Signup = () => {
-  const navigate = useNavigate()
   const { signup } = useAuth()
-  const methods = useForm<SignupInput>({
+  const methods = useForm<SignupSchema>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: { username: '', email: '', password: '', confirmPassword: '' },
     mode: 'onChange',
   })
 
@@ -31,19 +28,11 @@ export const Signup = () => {
     handleSubmit,
     control,
     formState: { isSubmitting },
+    setError
   } = methods
 
-  const onSubmit = async (values: SignupInput) => {
-    const { error, requiresVerification } = await signup(values.name, values.email, values.password)
-    if (error) {
-      toast.error(error)
-      return
-    }
-    if (requiresVerification) {
-      toast.success('Account created. Please check your email to verify before logging in.')
-      return
-    }
-    navigate('/login')
+  const onSubmit = async (values: SignupSchema) => {
+    await signup(values, setError)
   }
 
   return (
@@ -58,7 +47,7 @@ export const Signup = () => {
             <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
               <FormField
                 control={control}
-                name="name"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Name</FormLabel>
