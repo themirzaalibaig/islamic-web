@@ -11,6 +11,7 @@ import {
   FormMessage,
   Button,
   Input,
+  PasswordInput,
   Card,
   CardContent,
   CardDescription,
@@ -77,15 +78,11 @@ export const Login = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          className="pl-10"
-                          {...field}
-                        />
-                      </div>
+                      <PasswordInput
+                        placeholder="••••••••"
+                        leftIcon={Lock}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

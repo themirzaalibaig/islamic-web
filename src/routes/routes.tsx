@@ -9,6 +9,7 @@ import { PrayerTimes } from '@/features/prayer'
 import { Qibla } from '@/features/qibla'
 import { Calender } from '@/features/calender'
 import { Login, Signup, ForgotPassword, ResendVerification, Profile } from '@/features/auth/pages'
+import { Haidth } from '@/features/hadith'
 
 export const routes: RouteObject[] = [
   {
@@ -27,6 +28,16 @@ export const routes: RouteObject[] = [
       <AppLayout>
         <Protected>
           <Quran />
+        </Protected>
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/hadith',
+    element: (
+      <AppLayout>
+        <Protected>
+          <Haidth />
         </Protected>
       </AppLayout>
     ),

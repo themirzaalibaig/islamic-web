@@ -33,8 +33,8 @@ export const configureApiClient = (cfg: Partial<ApiClientConfig>) => {
 
 export const api: AxiosInstance = axios.create({
   baseURL: ENV.API_URL,
-  withCredentials: true,
   timeout: 15000,
+  withCredentials: true,
 })
 
 let refreshPromise: Promise<void> | null = null

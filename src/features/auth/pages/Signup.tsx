@@ -13,7 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { signupSchema, useAuth, type SignupSchema } from '@/features/auth'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, PasswordInput } from '@/components/ui'
 import { Lock, Mail, User } from 'lucide-react'
 
 export const Signup = () => {
@@ -89,15 +89,11 @@ export const Signup = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          className="pl-10"
-                          {...field}
-                        />
-                      </div>
+                      <PasswordInput
+                        placeholder="••••••••"
+                        leftIcon={Lock}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -110,15 +106,11 @@ export const Signup = () => {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          className="pl-10"
-                          {...field}
-                        />
-                      </div>
+                      <PasswordInput
+                        placeholder="••••••••"
+                        leftIcon={Lock}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

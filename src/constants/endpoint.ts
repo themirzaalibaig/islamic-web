@@ -16,9 +16,15 @@ export const ENDPOINTS = {
     LOGOUT: () => '/auth/logout',
     REFRESH_TOKEN: () => '/auth/refresh-token',
     VERIFY_EMAIL: () => '/auth/verify-email',
-    RESEND_VERIFICATION_EMAIL: () => '/resend-verification-email',
+    RESEND_VERIFICATION_EMAIL: () => '/auth/resend-verification-email',
     FORGOT_PASSWORD: () => '/auth/forgot-password',
     RESET_PASSWORD: () => '/auth/reset-password',
-    UPDATE_USER: () => '/update-user',
-  }
+    UPDATE_USER: () => '/auth/update-user',
+  },
+  HADITH: {
+    ...createCustomEndpoints('/hadith', {
+      COLLECTIONS: () => ({path:'/collections'}),
+      COLLECTION: (collectionName: string) => ({path:`/collections/${collectionName}`}),
+    }),
+  },
 }

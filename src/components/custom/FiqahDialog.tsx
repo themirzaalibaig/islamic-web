@@ -12,50 +12,58 @@ import {
   RadioGroupItem,
 } from '@/components/ui'
 import { School, Users, Loader2 } from 'lucide-react'
-import { supabase } from '@/config'
-import { useAuth } from '@/features/auth'
+import { useApi } from '@/hooks'
+import { ENDPOINTS } from '@/constants'
+import { useAppSelector, useAppDispatch, updateUser } from '@/redux'
+
+const FIQAHS = [
+  { id: 'Hanafi', name: 'Hanafi' },
+  { id: 'Maliki', name: 'Maliki' },
+  { id: 'Shafi', name: 'Shafi' },
+  { id: 'Hanbali', name: 'Hanbali' },
+]
 
 export const FiqahDialog = () => {
-  const [fiqas, setFiqas] = useState<
-    Array<{ id: string | number; name: string; description?: string }>
-  >([])
-  const [selectedFiqah, setSelectedFiqah] = useState<string | number | null>(null)
+  const [selectedFiqah, setSelectedFiqah] = useState<string | null>(null)
   const [open, setOpen] = useState<boolean>(false)
   const [updating, setUpdating] = useState<boolean>(false)
-  const { session } = useAuth()
+  const { user, isAuthenticated } = useAppSelector((store) => store.auth)
+  const dispatch = useAppDispatch()
+  const api = useApi([''], '', {
+    auth: true,
+    enabled: false,
+  })
 
   useEffect(() => {
-    if (!session?.user?.id) return
-    supabase
-      .from('users')
-      .select('fiqah,user_id')
-      .eq('user_id', session.user.id)
-      .single()
-      .then(({ data }) => {
-        if (!data?.fiqah) {
-          setOpen(true)
-        } else {
-          setSelectedFiqah(data.fiqah)
-        }
-      })
-  }, [session])
-
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase.from('fiqa').select('id,name')
-      setFiqas((data as any) || [])
+    if (!isAuthenticated || !user) return
+    
+    // Check if user already has a fiqah set
+    if (!user.fiqh) {
+      setOpen(true)
+    } else {
+      setSelectedFiqah(user.fiqh)
     }
-    load()
-  }, [session])
+  }, [user, isAuthenticated])
 
-  const onSelect = (id: string | number) => setSelectedFiqah(id)
+  const onSelect = (fiqah: string) => setSelectedFiqah(fiqah)
 
   const onConfirm = async () => {
-    if (!selectedFiqah || !session?.user?.id) return
+    if (!selectedFiqah) return
     setUpdating(true)
-    await supabase.from('users').update({ fiqah: selectedFiqah }).eq('user_id', session.user.id)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setOpen(false)
+    try {
+      await api.put<{ success: boolean }>(
+        { fiqah: selectedFiqah },
+        {
+          url: ENDPOINTS.AUTH.UPDATE_USER(),
+        },
+      )
+      dispatch(updateUser({ fiqh: selectedFiqah }))
+      setOpen(false)
+    } catch (error) {
+      console.error('Failed to update fiqah:', error)
+    } finally {
+      setUpdating(false)
+    }
   }
 
   const onOpenChange = (val: boolean) => setOpen(val)
@@ -69,7 +77,7 @@ export const FiqahDialog = () => {
           <div className="flex flex-col items-center justify-center py-10">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
             <p className="text-sm text-muted-foreground">
-              Hang tight! We’re updating your app experience…
+              Hang tight! We're updating your app experience…
             </p>
           </div>
         ) : (
@@ -85,10 +93,10 @@ export const FiqahDialog = () => {
             </AlertDialogHeader>
             <div className="space-y-2">
               <RadioGroup
-                value={selectedFiqah?.toString() || ''}
-                onValueChange={(value) => onSelect(Number(value))}
+                value={selectedFiqah || ''}
+                onValueChange={(value) => onSelect(value)}
               >
-                {fiqas.map((f) => (
+                {FIQAHS.map((f) => (
                   <div key={f.id} className="space-y-1">
                     <button
                       type="button"
@@ -105,7 +113,7 @@ export const FiqahDialog = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <RadioGroupItem
-                            value={f.id.toString()}
+                            value={f.id}
                             id={`fiqh-${f.id}`}
                             className="sr-only"
                           />

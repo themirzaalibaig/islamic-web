@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Mail } from 'lucide-react'
+import { Mail, Shield } from 'lucide-react'
 import { AuthLayout } from '@/components/layouts/AuthLayout'
 import {
   Form,
@@ -18,26 +18,38 @@ import {
   Input,
   Button,
 } from '@/components/ui'
-import { forgotPasswordSchema, type ForgotPasswordInput } from '@/schemas'
+import { otpSchema, type OtpSchema } from '@/features/auth'
 import { useAuth } from '@/features/auth'
 import { toast } from 'react-toastify'
+import { useAppSelector } from '@/redux'
 
 export const ResendVerification = () => {
-  const { resendVerification } = useAuth()
+  const { verifyEmail, resendVerificationEmail } = useAuth()
+  const { verificationEmail } = useAppSelector((store) => store.auth)
 
-  const methods = useForm<ForgotPasswordInput>({
-    resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { email: '' },
+  const methods = useForm<OtpSchema>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: { otp: '' },
     mode: 'onChange',
   })
 
-  const onSubmit = async (values: ForgotPasswordInput) => {
-    const { error } = await resendVerification(values.email)
-    if (error) {
-      toast.error(error)
+  const onSubmit = async (values: OtpSchema) => {
+    try {
+      await verifyEmail(values, methods.setError)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  const handleResend = async () => {
+    if (!verificationEmail) {
+      toast.error('No email found. Please sign up again.')
       return
     }
-    toast.success('Verification email resent. Please check your inbox.')
+    const result = await resendVerificationEmail({ email: verificationEmail }, methods.setError)
+    if (result?.success) {
+      toast.success('Verification email resent. Please check your inbox.')
+    }
   }
 
   const {
@@ -50,9 +62,19 @@ export const ResendVerification = () => {
     <AuthLayout>
       <Card className="mx-auto max-w-md w-full">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">Resend verification email</CardTitle>
+          <CardTitle className="text-2xl flex items-center gap-2">
+            <Shield className="h-6 w-6" />
+            Verify Your Email
+          </CardTitle>
           <CardDescription>
-            Enter your email address and we'll send you a new verification link.
+            {verificationEmail ? (
+              <>
+                We've sent a verification code to <strong>{verificationEmail}</strong>. Please enter
+                the code below.
+              </>
+            ) : (
+              'Please enter the verification code sent to your email address.'
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,18 +82,23 @@ export const ResendVerification = () => {
             <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
               <FormField
                 control={control}
-                name="email"
+                name="otp"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Verification Code</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                         <Input
-                          type="email"
-                          placeholder="you@example.com"
-                          className="pl-10"
+                          type="text"
+                          placeholder="Enter 6-digit code"
+                          className="pl-10 text-center text-lg tracking-widest"
+                          maxLength={6}
                           {...field}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 6)
+                            field.onChange(value)
+                          }}
                         />
                       </div>
                     </FormControl>
@@ -80,8 +107,20 @@ export const ResendVerification = () => {
                 )}
               />
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Resending…' : 'Resend Email'}
+                {isSubmitting ? 'Verifying...' : 'Verify Email'}
               </Button>
+              <div className="flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResend}
+                  disabled={!verificationEmail || isSubmitting}
+                  className="flex-1"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Resend Code
+                </Button>
+              </div>
               <div className="text-center text-sm">
                 <Link
                   to="/login"

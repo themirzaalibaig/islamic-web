@@ -54,8 +54,13 @@ const authSlice = createSlice({
         setForgotPasswordEmail: (state, action: PayloadAction<string>) => {
             state.forgotPasswordEmail = action.payload
         },
+        updateUser: (state, action: PayloadAction<Partial<User>>) => {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload }
+            }
+        },
     },
 })
 
-export const { login, logout, refreshToken, setVerificationEmail, setForgotPasswordEmail } = authSlice.actions
+export const { login, logout, refreshToken, setVerificationEmail, setForgotPasswordEmail, updateUser } = authSlice.actions
 export const authReducer = authSlice.reducer
