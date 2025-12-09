@@ -41,4 +41,7 @@ export const ENDPOINTS = {
       RANDOM_HADITH: () => ({ path: 'hadiths/random' }),
     }),
   },
+  TASBEEH: {
+    ...createResourceEndpoints<{ page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc'; active?: boolean }, string>('/tasbeehs'),
+  },
 }

@@ -9,6 +9,4 @@ export const ENV = {
   API_VERSION,
   API_URL: `${SERVER_URL}/api/${API_VERSION}`,
   API_ENDPOINT: `/api/${API_VERSION}`,
-  SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || '',
-  SUPABASE_API_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
 }
