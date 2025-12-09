@@ -10,6 +10,7 @@ import { Qibla } from '@/features/qibla'
 import { Calender } from '@/features/calender'
 import { Login, Signup, ForgotPassword, ResendVerification, Profile } from '@/features/auth/pages'
 import { Hadith, HadithCollection, HadithBook, HadithDetail } from '@/features/hadith'
+import { Dua, DuaDetail } from '@/features/dua'
 
 export const routes: RouteObject[] = [
   {
@@ -78,6 +79,26 @@ export const routes: RouteObject[] = [
       <AppLayout>
         <Protected>
           <Tasbeeh />
+        </Protected>
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/dua',
+    element: (
+      <AppLayout>
+        <Protected>
+          <Dua />
+        </Protected>
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/dua/:id',
+    element: (
+      <AppLayout>
+        <Protected>
+          <DuaDetail />
         </Protected>
       </AppLayout>
     ),

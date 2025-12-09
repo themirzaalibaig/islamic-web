@@ -1,4 +1,4 @@
-import { createResourceEndpoints, createCustomEndpoints } from '@/lib'
+import { createResourceEndpoints, createCustomEndpoints, toQueryString } from '@/lib'
 import type { Pagination, Sort, Status } from '@/types'
 
 type TestParams = Pagination & Sort & Status
@@ -43,5 +43,14 @@ export const ENDPOINTS = {
   },
   TASBEEH: {
     ...createResourceEndpoints<{ page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc'; active?: boolean }, string>('/tasbeehs'),
+  },
+  DUA: {
+    ALL: (params?: { category?: string; search?: string; page?: number; limit?: number }) => {
+      const qs = toQueryString(params)
+      return `/duas${qs}`
+    },
+    BY_ID: (id: string) => `/duas/${id}`,
+    CATEGORIES: () => '/duas/categories',
+    RANDOM: () => '/duas/random',
   },
 }
