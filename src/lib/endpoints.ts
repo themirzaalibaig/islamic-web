@@ -35,15 +35,19 @@ export const createResourceEndpoints = <
   TId extends string | number = string | number,
 >(
   resourcePath: string,
-  base: string = ENV.API_ENDPOINT || '',
 ) => {
   return {
-    ALL: (params?: TParams) => endpoint<TParams>(resourcePath, params, base),
-    CREATE: () => endpoint<TParams>(resourcePath, undefined, base),
-    GET_BY_ID: (id: TId, params?: TParams) =>
-      endpoint<TParams>(`${resourcePath}/${id}`, params, base),
-    UPDATE: (id: TId) => endpoint<TParams>(`${resourcePath}/${id}`, undefined, base),
-    DELETE: (id: TId) => endpoint<TParams>(`${resourcePath}/${id}`, undefined, base),
+    ALL: (params?: TParams) => {
+      const qs = toQueryString<TParams>(params)
+      return `${resourcePath}${qs}`
+    },
+    CREATE: () => resourcePath,
+    GET_BY_ID: (id: TId, params?: TParams) => {
+      const qs = toQueryString<TParams>(params)
+      return `${resourcePath}/${id}${qs}`
+    },
+    UPDATE: (id: TId) => `${resourcePath}/${id}`,
+    DELETE: (id: TId) => `${resourcePath}/${id}`,
   }
 }
 
@@ -53,7 +57,6 @@ export const createCustomEndpoints = <
 >(
   resourcePath: string,
   routes: TRoutes,
-  base: string = ENV.API_ENDPOINT || '',
 ) => {
   const out = {} as { [K in keyof TRoutes]: (...args: Parameters<TRoutes[K]>) => string }
   ;(Object.entries(routes) as Array<[keyof TRoutes, TRoutes[keyof TRoutes]]>).forEach(
@@ -61,7 +64,9 @@ export const createCustomEndpoints = <
       out[key] = ((...args: Parameters<typeof fn>) => {
         const def = (fn as any)(...args) as { path: string; params?: TParams }
         const p = def.path.startsWith('/') ? def.path : `${resourcePath}/${def.path}`
-        return endpoint<TParams>(p, def.params, base)
+        // Return path with query string but without base prefix (axios handles baseURL)
+        const qs = toQueryString<TParams>(def.params)
+        return `${p}${qs}`
       }) as any
     },
   )

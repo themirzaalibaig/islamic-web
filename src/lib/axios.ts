@@ -1,6 +1,8 @@
 import { ENV } from '@/config'
 import axios from 'axios'
 import type { AxiosInstance } from 'axios'
+import { store } from '@/redux/store'
+import { logout as logoutAction } from '@/redux/slice/auth.slice'
 
 export interface ApiClientConfig {
   enableTokenRefresh?: boolean
@@ -14,14 +16,11 @@ export interface ApiClientConfig {
 }
 
 let config: ApiClientConfig = {
-  enableTokenRefresh: false,
-  refreshUrl: '/auth/refresh',
+  enableTokenRefresh: true, // Enable token refresh by default
+  refreshUrl: '/auth/refresh-token',
   refreshMethod: 'post',
-  getRefreshPayload: () => ({ refresh_token: localStorage.getItem('refresh_token') || '' }),
-  extractTokens: (res: any) => ({
-    accessToken: res?.data?.access_token,
-    refreshToken: res?.data?.refresh_token,
-  }),
+  getRefreshPayload: () => ({}), // No payload needed since refresh token is in cookie
+  extractTokens: () => ({}), // No need to extract tokens since they're in cookies
   accessTokenKey: 'access_token',
   refreshTokenKey: 'refresh_token',
   authorizationHeader: 'Authorization',
@@ -34,57 +33,74 @@ export const configureApiClient = (cfg: Partial<ApiClientConfig>) => {
 export const api: AxiosInstance = axios.create({
   baseURL: ENV.API_URL,
   timeout: 15000,
-  withCredentials: true,
+  withCredentials: true, // Important: enables sending/receiving cookies
 })
 
 let refreshPromise: Promise<void> | null = null
 
+// Request interceptor - tokens are in cookies, so no Authorization header needed
 api.interceptors.request.use((req) => {
-  const token = localStorage.getItem(config.accessTokenKey || 'access_token')
-  if (token && req.headers) {
-    req.headers[config.authorizationHeader || 'Authorization'] = `Bearer ${token}`
-  }
+  // Cookies are automatically sent with withCredentials: true
+  // No need to manually set Authorization header if using cookies
   return req
 })
 
+// Response interceptor - handle token refresh on 401 errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (axios.isCancel(error)) return Promise.reject(error)
+    
     const status = error?.response?.status
     const original = error?.config
+
+    // Handle 401 Unauthorized - token expired, try to refresh
     if (status === 401 && config.enableTokenRefresh && !original?._retry) {
-      if (!localStorage.getItem(config.refreshTokenKey || 'refresh_token'))
-        return Promise.reject(error)
       original._retry = true
+
+      // Prevent multiple simultaneous refresh requests
       if (!refreshPromise) {
         refreshPromise = (async () => {
-          const payload = config.getRefreshPayload ? config.getRefreshPayload() : {}
-          const res = await api.request({
-            url: config.refreshUrl || '/auth/refresh',
-            method: config.refreshMethod || 'post',
-            data: payload,
-          })
-          const tokens = config.extractTokens
-            ? config.extractTokens(res)
-            : { accessToken: res?.data?.access_token, refreshToken: res?.data?.refresh_token }
-          if (tokens?.accessToken)
-            localStorage.setItem(
-              config.accessTokenKey || 'access_token',
-              tokens.accessToken as string,
-            )
-          if (tokens?.refreshToken)
-            localStorage.setItem(
-              config.refreshTokenKey || 'refresh_token',
-              tokens.refreshToken as string,
-            )
+          try {
+            // Refresh token is automatically sent via cookie (withCredentials: true)
+            const payload = config.getRefreshPayload ? config.getRefreshPayload() : {}
+            await api.request({
+              url: config.refreshUrl || '/auth/refresh-token',
+              method: config.refreshMethod || 'post',
+              data: payload,
+            })
+            // New tokens are automatically set in cookies by the backend
+            // No need to extract and store tokens
+          } catch (refreshError) {
+            // Refresh failed - user needs to login again
+            // Dispatch logout action and redirect to login
+            if (typeof window !== 'undefined') {
+              try {
+                store.dispatch(logoutAction())
+              } catch (e) {
+                // If dispatch fails, just clear localStorage
+                console.error('Failed to dispatch logout:', e)
+              }
+              window.location.href = '/login'
+            }
+            throw refreshError
+          }
         })().finally(() => {
           refreshPromise = null
         })
       }
-      await refreshPromise
-      return api(original)
+
+      // Wait for refresh to complete, then retry original request
+      try {
+        await refreshPromise
+        // Retry the original request - new access token cookie will be sent automatically
+        return api(original)
+      } catch (refreshError) {
+        // Refresh failed, reject with original error
+        return Promise.reject(error)
+      }
     }
+
     return Promise.reject(error)
   },
 )

@@ -1,2 +1,4 @@
-export * from './pages/Haidth'
-export * from './hooks/useHadith'
+export * from './pages'
+export * from './hooks'
+export * from './types'
+export * from './components'

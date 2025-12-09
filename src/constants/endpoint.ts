@@ -23,8 +23,22 @@ export const ENDPOINTS = {
   },
   HADITH: {
     ...createCustomEndpoints('/hadith', {
-      COLLECTIONS: () => ({path:'/collections'}),
-      COLLECTION: (collectionName: string) => ({path:`/collections/${collectionName}`}),
+      COLLECTIONS: () => ({ path: 'collections' }),
+      COLLECTION: (collectionName: string) => ({ path: `collections/${collectionName}` }),
+      COLLECTION_BOOKS: (collectionName: string) => ({ path: `collections/${collectionName}/books` }),
+      COLLECTION_BOOK: (collectionName: string, bookNumber: string) => ({
+        path: `collections/${collectionName}/books/${bookNumber}`,
+      }),
+      COLLECTION_BOOK_CHAPTERS: (collectionName: string, bookNumber: string) => ({
+        path: `collections/${collectionName}/books/${bookNumber}/chapters`,
+      }),
+      COLLECTION_BOOK_HADITHS: (collectionName: string, bookNumber: string) => ({
+        path: `collections/${collectionName}/books/${bookNumber}/hadiths`,
+      }),
+      COLLECTION_HADITH: (collectionName: string, hadithNumber: string) => ({
+        path: `collections/${collectionName}/hadiths/${hadithNumber}`,
+      }),
+      RANDOM_HADITH: () => ({ path: 'hadiths/random' }),
     }),
   },
 }

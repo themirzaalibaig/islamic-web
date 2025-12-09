@@ -9,7 +9,7 @@ import { PrayerTimes } from '@/features/prayer'
 import { Qibla } from '@/features/qibla'
 import { Calender } from '@/features/calender'
 import { Login, Signup, ForgotPassword, ResendVerification, Profile } from '@/features/auth/pages'
-import { Haidth } from '@/features/hadith'
+import { Hadith, HadithCollection, HadithBook, HadithDetail } from '@/features/hadith'
 
 export const routes: RouteObject[] = [
   {
@@ -37,7 +37,37 @@ export const routes: RouteObject[] = [
     element: (
       <AppLayout>
         <Protected>
-          <Haidth />
+          <Hadith />
+        </Protected>
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/hadith/:collectionName',
+    element: (
+      <AppLayout>
+        <Protected>
+          <HadithCollection />
+        </Protected>
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/hadith/:collectionName/books/:bookNumber',
+    element: (
+      <AppLayout>
+        <Protected>
+          <HadithBook />
+        </Protected>
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/hadith/:collectionName/hadiths/:hadithNumber',
+    element: (
+      <AppLayout>
+        <Protected>
+          <HadithDetail />
         </Protected>
       </AppLayout>
     ),
