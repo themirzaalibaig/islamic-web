@@ -52,7 +52,7 @@ export const FiqahDialog = () => {
     setUpdating(true)
     try {
       await api.put<{ success: boolean }>(
-        { fiqah: selectedFiqah },
+        { fiqh: selectedFiqah },
         {
           url: ENDPOINTS.AUTH.UPDATE_USER(),
         },
