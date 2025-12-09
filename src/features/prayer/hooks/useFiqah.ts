@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { supabase } from '@/config'
+import { useMemo } from 'react'
 import { useAuth } from '@/features/auth'
 import { Madhab } from 'adhan'
 
@@ -16,54 +15,25 @@ const resolveMadhab = (name?: string | null): typeof Madhab => {
 }
 
 export const useFiqah = () => {
-  const { session } = useAuth()
-  const [fiqah, setFiqah] = useState<FiqahInfo | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
+  const { user, isAuthenticated } = useAuth()
 
-  const load = useCallback(async () => {
-    if (!session?.user?.id) return
-    setLoading(true)
-    setError(null)
-    try {
-      const { data: userRow } = await supabase
-        .from('users')
-        .select('fiqah,user_id')
-        .eq('user_id', session.user.id)
-        .single()
-
-      const fiqahId = (userRow as any)?.fiqah
-      if (!fiqahId) {
-        setFiqah(null)
-        setLoading(false)
-        return
-      }
-      const { data: fiqhRow } = await supabase
-        .from('fiqa')
-        .select('id,name')
-        .eq('id', fiqahId)
-        .single()
-      const name = (fiqhRow as any)?.name as string | undefined
-      const info: FiqahInfo = {
-        id: fiqahId,
-        name: name || 'Shafi',
-        madhab: resolveMadhab(name),
-      }
-      setFiqah(info)
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load fiqah')
-    } finally {
-      setLoading(false)
+  const fiqah = useMemo<FiqahInfo | null>(() => {
+    if (!isAuthenticated || !user?.fiqh) {
+      return null
     }
-  }, [session])
 
-  useEffect(() => {
-    load()
-  }, [load])
+    const fiqhName = user.fiqh
+    return {
+      id: fiqhName,
+      name: fiqhName,
+      madhab: resolveMadhab(fiqhName),
+    }
+  }, [user, isAuthenticated])
 
-  const value = useMemo(
-    () => ({ fiqah, loading, error, reload: load }),
-    [fiqah, loading, error, load],
-  )
-  return value
+  return {
+    fiqah,
+    loading: false,
+    error: null,
+    reload: () => {},
+  }
 }
