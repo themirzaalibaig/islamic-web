@@ -23,7 +23,7 @@ import { toast } from 'react-toastify'
 import { Mail } from 'lucide-react'
 
 export const ForgotPassword = () => {
-  const { resetPassword } = useAuth()
+  const { forgotPassword } = useAuth()
   const methods = useForm<ForgotPasswordInput>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: '' },
@@ -34,15 +34,16 @@ export const ForgotPassword = () => {
     formState: { isSubmitting },
     handleSubmit,
     control,
+    setError,
   } = methods
 
   const onSubmit = async (values: ForgotPasswordInput) => {
-    const { error } = await resetPassword(values.email)
-    if (error) {
-      toast.error(error)
-      return
+    try {
+      await forgotPassword(values, setError)
+      toast.success('Password reset email sent. Please check your inbox.')
+    } catch (error) {
+      // Error handling is done by setError in forgotPassword
     }
-    toast.success('Password reset email sent. Please check your inbox.')
   }
 
   return (

@@ -228,7 +228,7 @@ export const useApi = <TData = any, E = any, V = any>(
       }
       options?.onSuccess?.(data)
     },
-    onError: (err, variables, context: any) => {
+    onError: (err, _variables, context: any) => {
       if (context?.previous) {
         queryClient.setQueryData(queryKey, context.previous as TData)
       }

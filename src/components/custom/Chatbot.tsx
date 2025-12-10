@@ -28,7 +28,7 @@ import {
   Clock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { format, formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow } from 'date-fns'
 
 interface Message {
   id: string
@@ -373,7 +373,7 @@ I can help with:
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-2xl flex flex-col p-0">
         {/* Header */}
-        <SheetHeader className="px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-background">
+        <SheetHeader className="px-6 py-4 border-b bg-linear-to-r from-primary/5 to-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button

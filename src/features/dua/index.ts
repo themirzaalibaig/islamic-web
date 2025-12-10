@@ -1,5 +1,6 @@
 export * from './pages'
 export * from './hooks'
 export * from './components'
-export * from './types'
+export type { DuaCategory, DuasResponse, DuaResponse, DuaCategoriesResponse } from './types'
+export type { Dua as DuaType } from './types'
 
