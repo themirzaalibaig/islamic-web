@@ -11,6 +11,7 @@ import { Calender } from '@/features/calender'
 import { Login, Signup, ForgotPassword, ResendVerification, Profile } from '@/features/auth/pages'
 import { Hadith, HadithCollection, HadithBook, HadithDetail } from '@/features/hadith'
 import { Dua, DuaDetail } from '@/features/dua'
+import { Chat } from '@/features/chat'
 
 export const routes: RouteObject[] = [
   {
@@ -129,6 +130,16 @@ export const routes: RouteObject[] = [
       <AppLayout>
         <Protected>
           <Calender />
+        </Protected>
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/chat',
+    element: (
+      <AppLayout>
+        <Protected>
+          <Chat />
         </Protected>
       </AppLayout>
     ),

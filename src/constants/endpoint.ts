@@ -53,4 +53,11 @@ export const ENDPOINTS = {
     CATEGORIES: () => '/duas/categories',
     RANDOM: () => '/duas/random',
   },
+  CHAT: {
+    ...createResourceEndpoints<{ page?: number; limit?: number }, string>('/chat'),
+    ...createCustomEndpoints('/chat', {
+      SEND_MESSAGE: (id: string) => ({ path: `${id}/messages` }),
+      DELETE_ALL: () => ({ path: '' }),
+    }),
+  },
 }

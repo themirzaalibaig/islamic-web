@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Sheet,
   SheetContent,
@@ -10,8 +10,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/features/auth'
 import { useChatbot } from './ChatbotContext'
+import { useChats, useChat, useChatActions, useSendMessage } from '@/features/chat'
 import {
   MessageCircle,
   Send,
@@ -29,20 +31,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
-
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
-}
-
-interface ChatSession {
-  id: string
-  title: string
-  messages: Message[]
-  lastMessageTime: Date
-}
+import type { ChatMessage, MessageSource } from '@/features/chat/types'
 
 const PREDEFINED_QUESTIONS = [
   {
@@ -92,58 +81,32 @@ const getGreeting = () => {
 
 export const Chatbot = () => {
   const { open, setOpen } = useChatbot()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { user } = useAuth()
 
+  const { chats, isLoading: isLoadingChats, refetch: refetchChats } = useChats(1, 20)
+  const { chat, isLoading: isLoadingChat, refetch: refetchChat } = useChat(currentChatId, !!currentChatId)
+  const { createChat, deleteChat } = useChatActions()
+  const { sendMessage, isLoading: isSendingMessage } = useSendMessage(currentChatId)
+
   const username = user?.username || user?.email?.split('@')[0] || 'Guest'
   const greeting = getGreeting()
+  const messages = chat?.messages || []
+  const isLoading = isLoadingChat || isSendingMessage
 
-  // Load chat sessions from localStorage
+  // Auto-select first chat if available
   useEffect(() => {
-    const savedSessions = localStorage.getItem('chatbot-sessions')
-    if (savedSessions) {
-      try {
-        const parsed = JSON.parse(savedSessions)
-        const sessions = parsed.map((session: any) => ({
-          ...session,
-          messages: session.messages.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp),
-          })),
-          lastMessageTime: new Date(session.lastMessageTime),
-        }))
-        setChatSessions(sessions)
-      } catch (error) {
-        console.error('Error loading chat sessions:', error)
-      }
+    if (!currentChatId && chats.length > 0 && open) {
+      setTimeout(() => {
+        setCurrentChatId(chats[0]._id)
+      }, 0)
     }
-  }, [])
+  }, [chats.length, currentChatId, open])
 
-  // Load current session messages
-  useEffect(() => {
-    if (currentSessionId) {
-      const session = chatSessions.find((s) => s.id === currentSessionId)
-      if (session) {
-        setMessages(session.messages)
-      }
-    } else {
-      setMessages([])
-    }
-  }, [currentSessionId, chatSessions])
-
-  // Save chat sessions to localStorage
-  useEffect(() => {
-    if (chatSessions.length > 0) {
-      localStorage.setItem('chatbot-sessions', JSON.stringify(chatSessions))
-    }
-  }, [chatSessions])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -159,183 +122,62 @@ export const Chatbot = () => {
     }
   }, [open])
 
-  const simulateAIResponse = async (userMessage: string): Promise<string> => {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000))
-
-    // Mock AI responses based on keywords
-    const lowerMessage = userMessage.toLowerCase()
-
-    if (lowerMessage.includes('quran') || lowerMessage.includes('surah') || lowerMessage.includes('verse')) {
-      return `Based on the Quran, I can help you understand Islamic teachings. The Quran is the holy book revealed to Prophet Muhammad (peace be upon him). It contains guidance for all aspects of life. 
-
-Would you like me to explain a specific verse or surah? I can provide context and meaning based on authentic Islamic sources.`
+  const createNewSession = useCallback(async () => {
+    const { chat: newChat, error } = await createChat()
+    if (newChat && !error) {
+      setCurrentChatId(newChat._id)
+      setShowHistory(false)
+      setTimeout(() => {
+        refetchChats()
+      }, 300)
     }
+  }, [createChat, refetchChats])
 
-    if (lowerMessage.includes('hadith') || lowerMessage.includes('prophet') || lowerMessage.includes('sunnah')) {
-      return `Regarding Hadith, I can share authentic sayings and actions of Prophet Muhammad (peace be upon him). 
-
-For example, the Prophet said: "The best of people are those who are most beneficial to others." (Authentic Hadith)
-
-Would you like me to share more Hadith on a specific topic?`
-    }
-
-    if (
-      lowerMessage.includes('anxiety') ||
-      lowerMessage.includes('stress') ||
-      lowerMessage.includes('worry') ||
-      lowerMessage.includes('problem') ||
-      lowerMessage.includes('difficult')
-    ) {
-      return `In Islam, we are taught to turn to Allah in times of difficulty. The Quran says: "And whoever fears Allah - He will make for him a way out and will provide for him from where he does not expect." (Quran 65:2-3)
-
-The Prophet (peace be upon him) also taught us to pray and be patient. Remember that with every difficulty comes ease. Would you like me to share specific duas or verses that can help?`
-    }
-
-    if (lowerMessage.includes('forgiveness') || lowerMessage.includes('forgive')) {
-      return `The Quran emphasizes forgiveness greatly. Allah says: "And let them pardon and overlook. Would you not like that Allah should forgive you? And Allah is Forgiving and Merciful." (Quran 24:22)
-
-Forgiveness is a virtue that brings peace to the heart and strengthens relationships. The Prophet (peace be upon him) was known for his forgiving nature.`
-    }
-
-    if (lowerMessage.includes('patience') || lowerMessage.includes('sabr')) {
-      return `Patience (Sabr) is highly valued in Islam. The Prophet (peace be upon him) said: "How wonderful is the affair of the believer, for his affairs are all good, and this applies to no one but the believer. If something good happens to him, he is thankful for it and that is good for him. If something bad happens to him, he bears it with patience and that is good for him." (Muslim)
-
-The Quran also says: "O you who believe! Seek help through patience and prayer. Indeed, Allah is with the patient." (Quran 2:153)`
-    }
-
-    if (lowerMessage.includes('gratitude') || lowerMessage.includes('thankful') || lowerMessage.includes('shukr')) {
-      return `Gratitude (Shukr) is essential in Islam. The Prophet (peace be upon him) said: "He who does not thank people, does not thank Allah." (Tirmidhi)
-
-Allah says in the Quran: "If you are grateful, I will surely increase you [in favor]." (Quran 14:7)
-
-Expressing gratitude brings blessings and increases what we have.`
-    }
-
-    if (lowerMessage.includes('peace') || lowerMessage.includes('calm')) {
-      return `Finding peace comes through remembrance of Allah. The Quran says: "Verily, in the remembrance of Allah do hearts find rest." (Quran 13:28)
-
-Regular prayer, recitation of Quran, and making dua can bring tranquility to the heart. The Prophet (peace be upon him) taught us various supplications for peace and protection.`
-    }
-
-    // Default response
-    return `Thank you for your question. I'm here to help you with information about the Quran, Hadith, and Islamic guidance.
-
-Based on your question, I can provide insights from authentic Islamic sources. Could you please provide more details about what specific aspect you'd like to know more about?
-
-I can help with:
-- Quranic verses and their meanings
-- Authentic Hadith
-- Islamic guidance for life's challenges
-- Spiritual advice based on Quran and Sunnah`
-  }
-
-  const createNewSession = () => {
-    const newSession: ChatSession = {
-      id: Date.now().toString(),
-      title: 'New Chat',
-      messages: [],
-      lastMessageTime: new Date(),
-    }
-    setChatSessions((prev) => [newSession, ...prev])
-    setCurrentSessionId(newSession.id)
-    setMessages([])
+  const selectChat = useCallback((chatId: string) => {
+    setCurrentChatId(chatId)
     setShowHistory(false)
-  }
+  }, [])
 
-  const selectSession = (sessionId: string) => {
-    setCurrentSessionId(sessionId)
-    setShowHistory(false)
-  }
-
-  const deleteSession = (sessionId: string, e: React.MouseEvent) => {
+  const handleDeleteChat = useCallback(async (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    setChatSessions((prev) => prev.filter((s) => s.id !== sessionId))
-    if (currentSessionId === sessionId) {
-      setCurrentSessionId(null)
-      setMessages([])
+    const { error } = await deleteChat(chatId)
+    if (!error) {
+      if (currentChatId === chatId) {
+        const remainingChats = chats.filter((c) => c._id !== chatId)
+        setCurrentChatId(remainingChats.length > 0 ? remainingChats[0]._id : null)
+      }
+      setTimeout(() => {
+        refetchChats()
+      }, 300)
     }
-  }
+  }, [deleteChat, currentChatId, chats, refetchChats])
 
-  const updateSessionTitle = (sessionId: string, firstMessage: string) => {
-    const title = firstMessage.length > 30 ? firstMessage.substring(0, 30) + '...' : firstMessage
-    setChatSessions((prev) =>
-      prev.map((s) => (s.id === sessionId ? { ...s, title, lastMessageTime: new Date() } : s)),
-    )
-  }
-
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if (!input.trim() || isLoading) return
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input.trim(),
-      timestamp: new Date(),
-    }
+    let chatId = currentChatId
 
-    // Create new session if none exists
-    let sessionId = currentSessionId
-    if (!sessionId) {
-      const newSession: ChatSession = {
-        id: Date.now().toString(),
-        title: userMessage.content.length > 30 ? userMessage.content.substring(0, 30) + '...' : userMessage.content,
-        messages: [userMessage],
-        lastMessageTime: new Date(),
-      }
-      setChatSessions((prev) => [newSession, ...prev])
-      sessionId = newSession.id
-      setCurrentSessionId(sessionId)
-    } else {
-      // Update existing session
-      setChatSessions((prev) =>
-        prev.map((s) =>
-          s.id === sessionId
-            ? { ...s, messages: [...s.messages, userMessage], lastMessageTime: new Date() }
-            : s,
-        ),
-      )
-      // Update title if it's the first message
-      const session = chatSessions.find((s) => s.id === sessionId)
-      if (session && session.messages.length === 0) {
-        updateSessionTitle(sessionId, userMessage.content)
+    // Create new chat if none exists
+    if (!chatId) {
+      const { chat: newChat, error } = await createChat()
+      if (newChat && !error) {
+        chatId = newChat._id
+        setCurrentChatId(chatId)
+        setTimeout(() => {
+          refetchChats()
+        }, 300)
+      } else {
+        return
       }
     }
 
-    setMessages((prev) => [...prev, userMessage])
+    const messageText = input.trim()
     setInput('')
-    setIsLoading(true)
 
-    try {
-      const aiResponse = await simulateAIResponse(userMessage.content)
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: aiResponse,
-        timestamp: new Date(),
-      }
-
-      setMessages((prev) => [...prev, assistantMessage])
-      setChatSessions((prev) =>
-        prev.map((s) =>
-          s.id === sessionId
-            ? { ...s, messages: [...s.messages, assistantMessage], lastMessageTime: new Date() }
-            : s,
-        ),
-      )
-    } catch (error) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try again.',
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    // Send message
+    // The hook already invalidates queries, so no need to manually refetch
+    await sendMessage(messageText)
+  }, [input, isLoading, currentChatId, createChat, sendMessage, refetchChat, refetchChats])
 
   const handlePredefinedQuestion = (question: string) => {
     setInput(question)
@@ -349,13 +191,16 @@ I can help with:
     }
   }
 
-  const clearCurrentChat = () => {
-    setMessages([])
-    if (currentSessionId) {
-      setChatSessions((prev) => prev.filter((s) => s.id !== currentSessionId))
-      setCurrentSessionId(null)
+  const clearCurrentChat = useCallback(async () => {
+    if (currentChatId) {
+      const { error } = await deleteChat(currentChatId)
+      if (!error) {
+        const remainingChats = chats.filter((c) => c._id !== currentChatId)
+        setCurrentChatId(remainingChats.length > 0 ? remainingChats[0]._id : null)
+        refetchChats()
+      }
     }
-  }
+  }, [currentChatId, deleteChat, chats, refetchChats])
 
   const hasMessages = messages.length > 0
 
@@ -430,7 +275,12 @@ I can help with:
                 </h3>
               </div>
               <div className="overflow-y-auto h-full">
-                {chatSessions.length === 0 ? (
+                {isLoadingChats ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin opacity-50" />
+                    <p>Loading conversations...</p>
+                  </div>
+                ) : chats.length === 0 ? (
                   <div className="p-4 text-center text-sm text-muted-foreground">
                     <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>No chat history yet</p>
@@ -438,32 +288,32 @@ I can help with:
                   </div>
                 ) : (
                   <div className="p-2 space-y-1">
-                    {chatSessions.map((session) => (
+                    {chats.map((chatItem) => (
                       <div
-                        key={session.id}
-                        onClick={() => selectSession(session.id)}
+                        key={chatItem._id}
+                        onClick={() => selectChat(chatItem._id)}
                         className={cn(
                           'group relative p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-accent',
-                          currentSessionId === session.id && 'bg-accent border border-primary/20',
+                          currentChatId === chatItem._id && 'bg-accent border border-primary/20',
                           'animate-in fade-in slide-in-from-left',
                         )}
                         style={{
-                          animationDelay: `${chatSessions.indexOf(session) * 50}ms`,
+                          animationDelay: `${chats.indexOf(chatItem) * 50}ms`,
                         }}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{session.title}</p>
+                            <p className="text-sm font-medium truncate">{chatItem.title || 'New Conversation'}</p>
                             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {formatDistanceToNow(session.lastMessageTime, { addSuffix: true })}
+                              {formatDistanceToNow(new Date(chatItem.updatedAt), { addSuffix: true })}
                             </p>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
-                            onClick={(e) => deleteSession(session.id, e)}
+                            onClick={(e) => handleDeleteChat(chatItem._id, e)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -534,7 +384,7 @@ I can help with:
                   {/* Chat Messages */}
                   {messages.map((message, index) => (
                     <div
-                      key={message.id}
+                      key={index}
                       className={cn(
                         'flex items-start gap-3 animate-in fade-in slide-in-from-bottom duration-300',
                         message.role === 'user' ? 'flex-row-reverse' : 'flex-row',
@@ -566,6 +416,16 @@ I can help with:
                         )}
                       >
                         <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        {message.sources && message.sources.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {message.sources.map((source: MessageSource, idx: number) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                <BookOpen className="h-3 w-3 mr-1" />
+                                {source.reference}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                         <p
                           className={cn(
                             'text-xs mt-1.5',
@@ -574,7 +434,7 @@ I can help with:
                               : 'text-muted-foreground',
                           )}
                         >
-                          {message.timestamp.toLocaleTimeString([], {
+                          {new Date(message.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}

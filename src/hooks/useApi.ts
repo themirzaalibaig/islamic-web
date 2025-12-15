@@ -10,7 +10,7 @@ import {
   type QueryKey,
 } from '@tanstack/react-query'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useMemo } from 'react'
 import type {
   ApiRequest,
   ParallelRequest,
@@ -56,7 +56,10 @@ export const useApi = <TData = any, E = any, V = any>(
         method,
         data,
         params,
-        signal,
+        // Only add signal if cancellation is not disabled
+        ...(config?.disableCancellation ? {} : { signal }),
+        // Apply custom timeout if provided
+        ...(config?.timeout ? { timeout: config.timeout } : {}),
         ...axiosConfig,
         ...config,
       }
@@ -73,6 +76,7 @@ export const useApi = <TData = any, E = any, V = any>(
           toast.success(String(msg))
         }
 
+        // Only invalidate if explicitly requested (don't auto-invalidate on mutations)
         if (config?.queryKey) {
           queryClient.invalidateQueries({ queryKey: config.queryKey })
         }
@@ -103,7 +107,7 @@ export const useApi = <TData = any, E = any, V = any>(
         const last = throttleMap.get(k) || 0
         const now = Date.now()
         if (now - last < options.throttleMs) {
-          const wait = (options.throttleMs || 0) - (now - last)
+          const wait = (options?.throttleMs || 0) - (now - last)
           return new Promise<TData>((resolve) =>
             setTimeout(() => resolve(run()), wait > 0 ? wait : 0),
           )
@@ -154,6 +158,10 @@ export const useApi = <TData = any, E = any, V = any>(
     staleTime: restQueryConfig?.staleTime ?? 1000 * 60 * 5,
     gcTime: restQueryConfig?.gcTime ?? 1000 * 60 * 30,
     retry: restQueryConfig?.retry ?? 2,
+    // Prevent unnecessary refetches
+    refetchOnMount: restQueryConfig?.refetchOnMount ?? false,
+    refetchOnWindowFocus: restQueryConfig?.refetchOnWindowFocus ?? false,
+    refetchOnReconnect: restQueryConfig?.refetchOnReconnect ?? false,
     ...restQueryConfig,
   })
 
@@ -242,35 +250,42 @@ export const useApi = <TData = any, E = any, V = any>(
       }
       if (options?.onError) options.onError(err as E)
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey })
-    },
+    // Don't auto-invalidate - let the caller control when to invalidate via config.queryKey
+    // onSettled: () => {
+    //   queryClient.invalidateQueries({ queryKey })
+    // },
   })
 
   // --- Helpers ---
-  const invalidate = (keys: QueryKey = queryKey) => queryClient.invalidateQueries({ queryKey: keys })
+  const invalidate = useCallback(
+    (keys: QueryKey = queryKey) => queryClient.invalidateQueries({ queryKey: keys }),
+    [queryClient, queryKey],
+  )
 
-  const handleMutationRequest = async <TResponse = TData>(
-    method: HttpMethod,
-    config?: AxiosRequestConfig & PerRequestConfig,
-    data?: any
-  ): Promise<AxiosResponse<TResponse>> => {
-    const silent = config?.silent ?? options?.silent
-    try {
-      const res = await request<TResponse>({ method, url: defaultUrl, data, config })
-      return res
-    } catch (err: any) {
-      if (!silent) {
-        const r = err?.response?.data
-        const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
-        if (!hasValidation) {
-          const msg = (r && r.message) || err?.message || 'Error'
-          toast.error(String(msg))
+  const handleMutationRequest = useCallback(
+    async <TResponse = TData>(
+      method: HttpMethod,
+      config?: AxiosRequestConfig & PerRequestConfig,
+      data?: any
+    ): Promise<AxiosResponse<TResponse>> => {
+      const silent = config?.silent ?? options?.silent
+      try {
+        const res = await request<TResponse>({ method, url: defaultUrl, data, config })
+        return res
+      } catch (err: any) {
+        if (!silent) {
+          const r = err?.response?.data
+          const hasValidation = Array.isArray(r?.errors) && r.errors.length > 0
+          if (!hasValidation) {
+            const msg = (r && r.message) || err?.message || 'Error'
+            toast.error(String(msg))
+          }
         }
+        throw err
       }
-      throw err
-    }
-  }
+    },
+    [request, defaultUrl, options?.silent],
+  )
 
   const useParallelApi = <P = any>(requests: ParallelRequest<P>[]) => {
     return useQueries({
@@ -289,33 +304,41 @@ export const useApi = <TData = any, E = any, V = any>(
     }))
   }
 
-  const batch = async (requests: ApiRequest[]): Promise<AxiosResponse<any>[]> => {
-    return Promise.all(requests.map((req) => request(req)))
-  }
+  const batch = useCallback(
+    async (requests: ApiRequest[]): Promise<AxiosResponse<any>[]> => {
+      return Promise.all(requests.map((req) => request(req)))
+    },
+    [request],
+  )
 
-  const uploadFile = async (file: File | File[], config?: AxiosRequestConfig & PerRequestConfig) => {
-    const files = Array.isArray(file) ? file : [file]
-    const formData = new FormData()
-    files.forEach((f) => formData.append('files', f))
-    return request({
-      method: 'post',
-      url: defaultUrl,
-      data: formData,
-      config: {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        ...config,
-      },
-    })
-  }
+  const uploadFile = useCallback(
+    async (file: File | File[], config?: AxiosRequestConfig & PerRequestConfig) => {
+      const files = Array.isArray(file) ? file : [file]
+      const formData = new FormData()
+      files.forEach((f) => formData.append('files', f))
+      return request({
+        method: 'post',
+        url: defaultUrl,
+        data: formData,
+        config: {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          ...config,
+        },
+      })
+    },
+    [request, defaultUrl],
+  )
 
-  const refetch = () => queryClient.refetchQueries({ queryKey })
-  const setData = (updater: (old: TData | undefined) => TData) =>
-    queryClient.setQueryData(queryKey, updater)
-  const remove = () => queryClient.removeQueries({ queryKey })
+  const refetch = useCallback(() => queryClient.refetchQueries({ queryKey }), [queryClient, queryKey])
+  const setData = useCallback(
+    (updater: (old: TData | undefined) => TData) => queryClient.setQueryData(queryKey, updater),
+    [queryClient, queryKey],
+  )
+  const remove = useCallback(() => queryClient.removeQueries({ queryKey }), [queryClient, queryKey])
 
-  const cancel = () => {
+  const cancel = useCallback(() => {
     queryClient.cancelQueries({ queryKey }, { revert: true, silent: false })
-  }
+  }, [queryClient, queryKey])
 
   const useInfiniteApi = <TInfiniteQueryData = any, TInfiniteError = any>(
     infiniteOptions?: InfiniteApiRequest &
@@ -363,70 +386,130 @@ export const useApi = <TData = any, E = any, V = any>(
     }
   }
 
-  const setAuth = (enabled: boolean, token?: string) => {
+  const setAuth = useCallback((enabled: boolean, token?: string) => {
     setAuthEnabled(enabled)
     if (token !== undefined) {
       if (enabled && token) localStorage.setItem('access_token', token)
       else localStorage.removeItem('access_token')
     }
-  }
+  }, [])
+
+  // Memoize methods to ensure stable references
+  const getMethod = useCallback(
+    <TResponse = TData>(config?: AxiosRequestConfig & PerRequestConfig) =>
+      request<TResponse>({ method: 'get', url: defaultUrl, config }),
+    [request, defaultUrl],
+  )
+
+  const postMethod = useCallback(
+    <TResponse = TData, TBody = V>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) =>
+      handleMutationRequest<TResponse>('post', config, data),
+    [handleMutationRequest],
+  )
+
+  const putMethod = useCallback(
+    <TResponse = TData, TBody = V>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) =>
+      handleMutationRequest<TResponse>('put', config, data),
+    [handleMutationRequest],
+  )
+
+  const patchMethod = useCallback(
+    <TResponse = TData, TBody = V>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) =>
+      handleMutationRequest<TResponse>('patch', config, data),
+    [handleMutationRequest],
+  )
+
+  const delMethod = useCallback(
+    <TResponse = TData>(config?: AxiosRequestConfig & PerRequestConfig) =>
+      handleMutationRequest<TResponse>('delete', config),
+    [handleMutationRequest],
+  )
 
   const raw = query.data as any
   const meta: ResponseMeta | undefined = raw && raw.meta ? (raw.meta as ResponseMeta) : undefined
   const payload = raw && raw.success !== undefined && raw.timestamp ? (raw.data ?? undefined) : raw
   const extracted = typeof payload === 'object' && payload ? payload : undefined
 
-  return {
-    data: payload as TData | undefined,
-    response: query.data ? ({ data: payload } as AxiosResponse<TData>) : undefined,
-    meta,
-    validationErrors: raw && raw.errors ? (raw.errors as ValidationError[] | null) : null,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    isPending: query.isPending || mutation.isPending,
-    isError: query.isError || mutation.isError,
-    isSuccess: query.isSuccess,
-    error: (query.error || mutation.error) as E | null,
-    status: query.isLoading
-      ? 'loading'
-      : query.isError
-        ? 'error'
-        : query.isSuccess
-          ? 'success'
-          : 'idle',
-    isMutating: mutation.isPending,
-    mutate: mutation.mutate,
-    mutateAsync: mutation.mutateAsync,
+  // Memoize the return object to ensure stable references
+  return useMemo(
+    () => ({
+      data: payload as TData | undefined,
+      response: query.data ? ({ data: payload } as AxiosResponse<TData>) : undefined,
+      meta,
+      validationErrors: raw && raw.errors ? (raw.errors as ValidationError[] | null) : null,
+      isLoading: query.isLoading,
+      isFetching: query.isFetching,
+      isPending: query.isPending || mutation.isPending,
+      isError: query.isError || mutation.isError,
+      isSuccess: query.isSuccess,
+      error: (query.error || mutation.error) as E | null,
+      status: query.isLoading
+        ? 'loading'
+        : query.isError
+          ? 'error'
+          : query.isSuccess
+            ? 'success'
+            : 'idle',
+      isMutating: mutation.isPending,
+      mutate: mutation.mutate,
+      mutateAsync: mutation.mutateAsync,
 
-    get: <TResponse = TData>(config?: AxiosRequestConfig & PerRequestConfig) =>
-      request<TResponse>({ method: 'get', url: defaultUrl, config }),
+      get: getMethod,
+      post: postMethod,
+      put: putMethod,
+      patch: patchMethod,
+      del: delMethod,
 
-    post: <TResponse = TData, TBody = V>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) =>
-      handleMutationRequest<TResponse>('post', config, data),
-
-    put: <TResponse = TData, TBody = V>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) =>
-      handleMutationRequest<TResponse>('put', config, data),
-
-    patch: <TResponse = TData, TBody = V>(data?: TBody, config?: AxiosRequestConfig & PerRequestConfig) =>
-      handleMutationRequest<TResponse>('patch', config, data),
-
-    del: <TResponse = TData>(config?: AxiosRequestConfig & PerRequestConfig) =>
-      handleMutationRequest<TResponse>('delete', config),
-
-    request,
-    uploadFile,
-    parallel: useParallelApi,
-    batch,
-    cancel,
-    useInfiniteApi,
-    invalidate,
-    refetch,
-    setData,
-    remove,
-    setAuth,
-    makeKey,
-    ...(extracted || {}),
-  } as unknown as UseApiReturn<TData, E, V> & (TData extends object ? Partial<TData> : object)
+      request,
+      uploadFile,
+      parallel: useParallelApi,
+      batch,
+      cancel,
+      useInfiniteApi,
+      invalidate,
+      refetch,
+      setData,
+      remove,
+      setAuth,
+      makeKey,
+      ...(extracted || {}),
+    }),
+    [
+      payload,
+      query.data,
+      meta,
+      raw,
+      query.isLoading,
+      query.isFetching,
+      query.isPending,
+      mutation.isPending,
+      query.isError,
+      mutation.isError,
+      query.isSuccess,
+      query.error,
+      mutation.error,
+      mutation.mutate,
+      mutation.mutateAsync,
+      getMethod,
+      postMethod,
+      putMethod,
+      patchMethod,
+      delMethod,
+      request,
+      uploadFile,
+      useParallelApi,
+      batch,
+      cancel,
+      useInfiniteApi,
+      invalidate,
+      refetch,
+      setData,
+      remove,
+      setAuth,
+      makeKey,
+      extracted,
+    ],
+  ) as unknown as UseApiReturn<TData, E, V> & (TData extends object ? Partial<TData> : object)
 }
 
 export { api as apiClient }

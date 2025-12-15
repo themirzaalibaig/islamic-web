@@ -118,6 +118,10 @@ export interface InfiniteApiRequest {
 export interface PerRequestConfig {
   silent?: boolean
   queryKey?: QueryKey
+  /** Disable request cancellation (useful for long-running requests like AI responses) */
+  disableCancellation?: boolean
+  /** Custom timeout in milliseconds (overrides default axios timeout) */
+  timeout?: number
 }
 
 /**

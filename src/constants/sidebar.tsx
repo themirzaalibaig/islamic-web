@@ -26,4 +26,5 @@ export const SIDEBAR_MENU: SidebarNavItem[] = [
   { href: '/tasbeeh', icon: Target, title: 'Tasbeeh' },
   { href: '/qibla', icon: Compass, title: 'Qibla' },
   { href: '/calendar', icon: Calendar, title: 'Calendar' },
+  { href: '/chat', icon: MessageSquare, title: 'Chat' },
 ]
