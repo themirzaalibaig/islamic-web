@@ -2,7 +2,7 @@ import { ENV } from '@/config'
 import axios from 'axios'
 import type { AxiosInstance } from 'axios'
 import { store } from '@/redux/store'
-import { logout as logoutAction } from '@/redux/slice/auth.slice'
+import { logout as logoutAction, refreshToken as refreshTokenAction } from '@/redux/slice/auth.slice'
 
 export interface ApiClientConfig {
   enableTokenRefresh?: boolean
@@ -19,8 +19,8 @@ let config: ApiClientConfig = {
   enableTokenRefresh: true, // Enable token refresh by default
   refreshUrl: '/auth/refresh-token',
   refreshMethod: 'post',
-  getRefreshPayload: () => ({}), // No payload needed since refresh token is in cookie
-  extractTokens: () => ({}), // No need to extract tokens since they're in cookies
+  getRefreshPayload: () => ({}), // Custom payload function (if needed)
+  extractTokens: () => ({}), // Custom token extraction function (if needed)
   accessTokenKey: 'access_token',
   refreshTokenKey: 'refresh_token',
   authorizationHeader: 'Authorization',
@@ -33,15 +33,27 @@ export const configureApiClient = (cfg: Partial<ApiClientConfig>) => {
 export const api: AxiosInstance = axios.create({
   baseURL: ENV.API_URL,
   timeout: 15000,
-  withCredentials: true, // Important: enables sending/receiving cookies
+  withCredentials: true, // Important: enables sending/receiving cookies (if using cookie-based auth)
 })
 
 let refreshPromise: Promise<void> | null = null
 
-// Request interceptor - tokens are in cookies, so no Authorization header needed
+// Request interceptor - Add Authorization header from stored token
 api.interceptors.request.use((req) => {
-  // Cookies are automatically sent with withCredentials: true
-  // No need to manually set Authorization header if using cookies
+  // Skip Authorization header for refresh token endpoint
+  const isRefreshEndpoint = req.url?.includes('/auth/refresh-token') || 
+                           req.url === config.refreshUrl
+  
+  if (!isRefreshEndpoint) {
+    // Get token from Redux store or localStorage
+    const state = store.getState()
+    const token = state?.auth?.token?.accessToken || localStorage.getItem('access_token')
+    
+    if (token && !req.headers['Authorization']) {
+      req.headers['Authorization'] = `Bearer ${token}`
+    }
+  }
+  
   return req
 })
 
@@ -62,23 +74,52 @@ api.interceptors.response.use(
       if (!refreshPromise) {
         refreshPromise = (async () => {
           try {
-            // Refresh token is automatically sent via cookie (withCredentials: true)
-            const payload = config.getRefreshPayload ? config.getRefreshPayload() : {}
-            await api.request({
+            // Get refresh token from Redux store
+            const state = store.getState()
+            const refreshToken = state?.auth?.token?.refreshToken
+            
+            if (!refreshToken) {
+              throw new Error('No refresh token available')
+            }
+
+            // Call refresh endpoint with refresh token in body
+            // Request interceptor will skip adding Authorization header for refresh endpoint
+            const response = await api.request({
               url: config.refreshUrl || '/auth/refresh-token',
               method: config.refreshMethod || 'post',
-              data: payload,
+              data: { refreshToken }, // Send refresh token in body
             })
-            // New tokens are automatically set in cookies by the backend
-            // No need to extract and store tokens
+
+            // Extract new tokens from response
+            const responseData = response.data
+            if (responseData?.success && responseData?.data?.token) {
+              const { accessToken, refreshToken: newRefreshToken } = responseData.data.token
+              
+              // Update Redux store with new tokens
+              store.dispatch(refreshTokenAction({
+                accessToken,
+                refreshToken: newRefreshToken || refreshToken, // Use new token or keep old one
+              }))
+              
+              // Update localStorage
+              if (config.accessTokenKey) {
+                localStorage.setItem(config.accessTokenKey, accessToken)
+              }
+              if (config.refreshTokenKey && newRefreshToken) {
+                localStorage.setItem(config.refreshTokenKey, newRefreshToken)
+              }
+            } else {
+              throw new Error('Invalid refresh token response')
+            }
           } catch (refreshError) {
             // Refresh failed - user needs to login again
-            // Dispatch logout action and redirect to login
             if (typeof window !== 'undefined') {
               try {
                 store.dispatch(logoutAction())
+                // Clear localStorage
+                localStorage.removeItem('access_token')
+                localStorage.removeItem('refresh_token')
               } catch (e) {
-                // If dispatch fails, just clear localStorage
                 console.error('Failed to dispatch logout:', e)
               }
               window.location.href = '/login'
@@ -93,9 +134,15 @@ api.interceptors.response.use(
       // Wait for refresh to complete, then retry original request
       try {
         await refreshPromise
-        // Retry the original request - new access token cookie will be sent automatically
+        // Update the Authorization header with new token
+        const newToken = store.getState()?.auth?.token?.accessToken
+        if (newToken && original) {
+          original.headers = original.headers || {}
+          original.headers['Authorization'] = `Bearer ${newToken}`
+        }
+        // Retry the original request
         return api(original)
-      } catch (refreshError) {
+      } catch {
         // Refresh failed, reject with original error
         return Promise.reject(error)
       }
