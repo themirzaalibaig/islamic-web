@@ -31,7 +31,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
-import type { ChatMessage, MessageSource } from '@/features/chat/types'
+import type { MessageSource } from '@/features/chat/types'
 
 const PREDEFINED_QUESTIONS = [
   {

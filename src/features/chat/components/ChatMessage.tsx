@@ -1,4 +1,4 @@
-import { Card, Badge } from '@/components/ui'
+import { Badge } from '@/components/ui'
 import { User, Bot, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatMessage as ChatMessageType, MessageSource } from '../types'

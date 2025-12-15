@@ -43,7 +43,7 @@ export interface ChatResponse extends ApiResponse<{ chat: Chat }> {
   chat: Chat
 }
 
-export interface MessageResponse extends ApiResponse<{ message: ChatMessage }> {
-  message: ChatMessage
+export interface MessageResponse extends ApiResponse<{ message: string }> {
+  message: string
 }
 
